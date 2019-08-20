@@ -1,0 +1,29 @@
+{
+    "name": "teltek/pumukit-ldap-bundle",
+    "type": "symfony-bundle",
+    "description": "LDAP bundle for PuMuKIT",
+    "keywords": [
+        "ldap",
+        "symfony",
+        "bundle",
+        "pumukit",
+        "teltek"
+    ],
+    "homepage": "https://github.com/pumukit/PumukitLDAPBundle",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Teltek Team",
+            "homepage": "http://teltek.es"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "pumukit/pumukit": ">=3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Pumukit\\LDAPBundle\\": ""
+        }
+    }
+}
