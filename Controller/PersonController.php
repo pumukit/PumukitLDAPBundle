@@ -2,34 +2,47 @@
 
 namespace Pumukit\LDAPBundle\Controller;
 
+use Doctrine\ODM\MongoDB\DocumentManager;
+use Pumukit\LDAPBundle\Services\LDAPService;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Person;
 use Pumukit\SchemaBundle\Document\Role;
+use Pumukit\SchemaBundle\Services\PersonService;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
 
 /**
- * @Route("/person")
+ * @Route("/admin/ldap/person")
  * @Security("is_granted('ROLE_ACCESS_MULTIMEDIA_SERIES')")
  */
-class PersonController extends Controller
+class PersonController extends AbstractController
 {
+    private $documentManager;
+    private $LDAPService;
+    private $personService;
+
+    public function __construct(DocumentManager $documentManager, LDAPService $LDAPService, PersonService $personService)
+    {
+        $this->documentManager = $documentManager;
+        $this->LDAPService = $LDAPService;
+        $this->personService = $personService;
+    }
+
     /**
      * @Route("/button", name="pumukit_ldap_person_button")
      * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
-     * @Template("PumukitLDAPBundle:Person:button.html.twig")
+     * @Template("@PumukitLDAP/Person/button.html.twig")
      */
-    public function buttonAction(MultimediaObject $multimediaObject, Role $role, Request $request)
+    public function buttonAction(Request $request, MultimediaObject $multimediaObject, Role $role): array
     {
-        $ldapService = $this->get('pumukit_ldap.ldap');
-        $ldapConnected = $ldapService->checkConnection();
+        $ldapConnected = $this->LDAPService->checkConnection();
 
         return [
             'ldap_connected' => $ldapConnected,
@@ -42,9 +55,9 @@ class PersonController extends Controller
      * @Route("/listautocomplete/{mmId}/{roleId}", name="pumukit_ldap_person_listautocomplete")
      * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
-     * @Template("PumukitLDAPBundle:Person:listautocomplete.html.twig")
+     * @Template("@PumukitLDAP/Person/listautocomplete.html.twig")
      */
-    public function listautocompleteAction(MultimediaObject $multimediaObject, Role $role, Request $request)
+    public function listautocompleteAction(MultimediaObject $multimediaObject, Role $role): array
     {
         $template = $multimediaObject->isPrototype() ? '_template' : '';
 
@@ -56,18 +69,15 @@ class PersonController extends Controller
     }
 
     /**
-     * Auto complete.
-     *
      * @Route("/autocomplete", name="pumukit_ldap_person_autocomplete")
      */
     public function autocompleteAction(Request $request)
     {
-        $ldapService = $this->get('pumukit_ldap.ldap');
         $login = $request->get('term');
         $out = [];
 
         try {
-            $people = $ldapService->getListUsers('*'.$login.'*', '*'.$login.'*');
+            $people = $this->LDAPService->getListUsers('*'.$login.'*', '*'.$login.'*');
             foreach ($people as $person) {
                 $out[] = [
                     'value' => $person['cn'],
@@ -84,32 +94,29 @@ class PersonController extends Controller
     }
 
     /**
-     * Link person to multimedia object with role.
-     *
      * @Route("/link/{mmId}/{roleId}", name="pumukit_ldap_person_link")
      * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
      */
-    public function linkAction(MultimediaObject $multimediaObject, Role $role, Request $request)
+    public function linkAction(Request $request, MultimediaObject $multimediaObject, Role $role): Response
     {
         $cn = $request->get('cn');
         $email = $request->get('mail');
-        $personService = $this->get('pumukitschema.person');
-        $personalScopeRoleCode = $personService->getPersonalScopeRoleCode();
+        $personalScopeRoleCode = $this->personService->getPersonalScopeRoleCode();
 
         try {
-            $person = $personService->findPersonByEmail($email);
+            $person = $this->personService->findPersonByEmail($email);
             if (null === $person) {
                 $person = $this->createPersonFromLDAP($cn, $email);
             }
-            $multimediaObject = $personService->createRelationPerson($person, $role, $multimediaObject);
+            $multimediaObject = $this->personService->createRelationPerson($person, $role, $multimediaObject);
         } catch (\Exception $e) {
             return new Response($e->getMessage(), 400);
         }
         $template = $multimediaObject->isPrototype() ? '_template' : '';
 
         return $this->render(
-            'PumukitNewAdminBundle:Person:listrelation.html.twig',
+            '@PumukitNewAdmin/Person/listrelation.html.twig',
             [
                 'people' => $multimediaObject->getPeopleByRole($role, true),
                 'role' => $role,
@@ -120,21 +127,18 @@ class PersonController extends Controller
         );
     }
 
-    private function createPersonFromLDAP($cn = '', $mail = '')
+    private function createPersonFromLDAP(string $cn = '', string $mail = ''): Person
     {
-        $dm = $this->get('doctrine_mongodb.odm.document_manager');
-        $ldapService = $this->get('pumukit_ldap.ldap');
-
         try {
-            $aux = $ldapService->getListUsers('', $mail);
+            $aux = $this->LDAPService->getListUsers('', $mail);
             if (0 === count($aux)) {
                 throw new \InvalidArgumentException('There is no LDAP user with the name "'.$cn.'" and email "'.$mail.'"');
             }
             $person = new Person();
             $person->setName($aux[0]['cn']);
             $person->setEmail($aux[0]['mail']);
-            $dm->persist($person);
-            $dm->flush();
+            $this->documentManager->persist($person);
+            $this->documentManager->flush();
         } catch (\Exception $e) {
             throw $e;
         }

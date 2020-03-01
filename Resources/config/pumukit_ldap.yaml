@@ -1,0 +1,28 @@
+services:
+  _defaults:
+    autowire:      true
+    autoconfigure: true
+    public:        true
+    bind:
+      $server: '%pumukit_ldap.server%'
+      $bindRdn: '%pumukit_ldap.bind_rdn%'
+      $bindPassword: '%pumukit_ldap.bind_password%'
+      $baseDn: '%pumukit_ldap.base_dn%'
+
+  Symfony\Component\Ldap\LdapClient:
+    class: Symfony\Component\Ldap\LdapClient
+    arguments:
+      - '%pumukit_ldap.server%'
+
+  Pumukit\LDAPBundle\Controller\:
+    resource: '../../Controller'
+    tags: ['controller.service_arguments']
+
+  Pumukit\LDAPBundle\Services\LDAPService:
+    class: Pumukit\LDAPBundle\Services\LDAPService
+
+  Pumukit\LDAPBundle\EventListener\AuthenticationHandler:
+    class: Pumukit\LDAPBundle\EventListener\AuthenticationHandler
+
+  Pumukit\LDAPBundle\Services\LDAPUserService:
+    class: Pumukit\LDAPBundle\Services\LDAPUserService

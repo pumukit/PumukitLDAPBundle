@@ -12,8 +12,13 @@ class LDAPService
     private $baseDn;
     private $logger;
 
-    public function __construct($server, $bindRdn, $bindPassword, $baseDn, LoggerInterface $logger)
-    {
+    public function __construct(
+        string $server,
+        string $bindRdn,
+        string $bindPassword,
+        string $baseDn,
+        LoggerInterface $logger
+    ) {
         $this->server = $server;
         $this->bindRdn = $bindRdn;
         $this->bindPassword = $bindPassword;
@@ -21,22 +26,12 @@ class LDAPService
         $this->logger = $logger;
     }
 
-    /**
-     * Is Configured.
-     *
-     * Checks if all the parameters are defined
-     */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
         return ($this->server) ? true : false;
     }
 
-    /**
-     * Check connection.
-     *
-     * @return bool true if connects, false otherwise
-     */
-    public function checkConnection()
+    public function checkConnection(): bool
     {
         if ($this->isConfigured()) {
             try {
@@ -58,17 +53,7 @@ class LDAPService
         return false;
     }
 
-    /**
-     * Is user
-     * Checks if user with given password
-     * exists in LDAP Server.
-     *
-     * @param string $user User name
-     * @param string $pass Password to verify
-     *
-     * @return bool true if user exists, false otherwise
-     */
-    public function isUser($user = '', $pass = '')
+    public function isUser(string $user = '', string $pass = ''): bool
     {
         if ('' === $pass) {
             return false;
@@ -99,15 +84,7 @@ class LDAPService
         return $ret;
     }
 
-    /**
-     * Obtiene el nombre completo de usuario del
-     * servidor ldap.
-     *
-     * @param string $user nombre del usuario
-     *
-     * @return string nombre completo del usuario
-     */
-    public function getName($user)
+    public function getName(string $user): string
     {
         $name = false;
 
@@ -134,17 +111,7 @@ class LDAPService
         return $name;
     }
 
-    /**
-     * Obtiene el correo electronico de usuario del
-     * servidor ldap.
-     *
-     * @public
-     *
-     * @param string $user nombre del usuario
-     *
-     * @return string correo del usuario
-     */
-    public function getMail($user)
+    public function getMail(string $user): string
     {
         $name = false;
 
@@ -171,34 +138,12 @@ class LDAPService
         return $name;
     }
 
-    /**
-     * Get all the LDAP info from the user email.
-     *
-     * @public
-     * @pararm string $email
-     *
-     * @param mixed $email
-     *
-     * @return array|false
-     */
     public function getInfoFromEmail($email)
     {
         return $this->getInfoFrom('mail', $email);
     }
 
-    /**
-     * Get all the LDAP info from the user email.
-     *
-     * @public
-     * @pararm string $key
-     * @pararm string $value
-     *
-     * @param mixed $key
-     * @param mixed $value
-     *
-     * @return array|false
-     */
-    public function getInfoFrom($key, $value)
+    public function getInfoFrom(string $key, string $value)
     {
         $return = false;
 
@@ -219,23 +164,7 @@ class LDAPService
         return $return;
     }
 
-    /**
-     * Get list of users.
-     *
-     * Searches LDAP users by CN or MAIL
-     * If CN is an empty string or null and MAIL a given string:
-     * - Returns LDAP users with given MAIL
-     * If MAIL is an empty string or null and CN a given string:
-     * - Returns LDAP users with given CN
-     * If CN and MAIL are strings (equal or different):
-     * - Returns LDAP users with given CN and LDAP users with given MAIL
-     *
-     * @param string $cn
-     * @param string $mail
-     *
-     * @return array
-     */
-    public function getListUsers($cn = '', $mail = '')
+    public function getListUsers(string $cn = '', string $mail = ''): array
     {
         $limit = 40;
         $out = [];
@@ -272,23 +201,7 @@ class LDAPService
         return $out;
     }
 
-    /**
-     * Get filter.
-     *
-     * Builds LDAP filter by CN or MAIL
-     * If CN is an empty string or null and MAIL a given string:
-     * - Returns LDAP query with given MAIL
-     * If MAIL is an empty string or null and CN a given string:
-     * - Returns LDAP query with given CN
-     * If CN and MAIL are strings (equal or different):
-     * - Returns LDAP query with given CN and LDAP users with given MAIL
-     *
-     * @param string $cn
-     * @param string $mail
-     *
-     * @return string
-     */
-    private function getFilter($cn = '', $mail = '')
+    private function getFilter(string $cn = '', string $mail = ''): string
     {
         $filter = ($cn ? 'cn='.$cn : '');
         if ($mail) {
