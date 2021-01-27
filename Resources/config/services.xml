@@ -11,6 +11,7 @@
         <service id="ldap" class="Symfony\Component\Ldap\LdapClient">
             <argument>%pumukit_ldap.host%</argument>
             <argument>%pumukit_ldap.port%</argument>
+            <argument>%pumukit_ldap.version%</argument>
             <argument>%pumukit_ldap.useSSL%</argument>
         </service>
 
