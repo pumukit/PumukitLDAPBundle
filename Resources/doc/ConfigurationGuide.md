@@ -14,7 +14,6 @@ security:
                 search_password: xxxxx
                 default_roles: ROLE_USER
                 uid_key: uid
-
         ...
         
     firewalls:
@@ -50,6 +49,9 @@ Update your `app/config/parameters.yml` file with:
 ```
 pumukit_ldap:
     server: 'your LDAP server'
+    host: 'host'
+    port: 389
+    useSSL: true
     bind_rdn: 'uid=example,ou=sistema,dc=example,dc=es'
     bind_password: xxxxxx
     base_dn: 'ou=people,dc=example,dc=es'

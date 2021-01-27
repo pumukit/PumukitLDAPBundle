@@ -27,19 +27,15 @@ class LDAPUserService
     protected $permissionProfileService;
     protected $groupService;
 
-    /**
-     * LDAPUserService constructor.
-     *
-     * @param DocumentManager          $documentManager
-     * @param UserService              $userService
-     * @param PersonService            $personService
-     * @param LDAPService              $LDAPService
-     * @param PermissionProfileService $permissionProfile
-     * @param GroupService             $groupService
-     * @param LoggerInterface          $logger
-     */
-    public function __construct(DocumentManager $documentManager, UserService $userService, PersonService $personService, LDAPService $LDAPService, PermissionProfileService $permissionProfile, GroupService $groupService, LoggerInterface $logger)
-    {
+    public function __construct(
+        DocumentManager $documentManager,
+        UserService $userService,
+        PersonService $personService,
+        LDAPService $LDAPService,
+        PermissionProfileService $permissionProfile,
+        GroupService $groupService,
+        LoggerInterface $logger
+    ) {
         $this->dm = $documentManager;
         $this->userService = $userService;
         $this->personService = $personService;
@@ -51,7 +47,7 @@ class LDAPUserService
 
     /**
      * @param array       $info
-     * @param null|string $username
+     * @param string|null $username
      *
      * @throws \Exception
      *
@@ -166,7 +162,7 @@ class LDAPUserService
      * @param string $key
      * @param string $type
      *
-     * @return null|string|string[]
+     * @return string|string[]|null
      */
     protected function getGroupKey($key, $type = null)
     {
