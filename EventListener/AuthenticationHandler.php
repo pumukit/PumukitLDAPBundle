@@ -2,6 +2,7 @@
 
 namespace Pumukit\LDAPBundle\EventListener;
 
+use FOS\UserBundle\Model\UserInterface;
 use Pumukit\LDAPBundle\Services\LDAPService;
 use Pumukit\LDAPBundle\Services\LDAPUserService;
 use Pumukit\SchemaBundle\Document\User;
@@ -40,7 +41,7 @@ class AuthenticationHandler implements AuthenticationSuccessHandlerInterface
     public function onAuthenticationSuccess(Request $request, TokenInterface $token)
     {
         $user = $token->getUser();
-        if (!$user instanceof User) {
+        if (!$user) {
             throw new \RuntimeException('Error, token is not an instanceof User.');
         }
 
