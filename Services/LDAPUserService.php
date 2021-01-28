@@ -60,7 +60,7 @@ class LDAPUserService
         }
 
         $user = $this->dm->getRepository(User::class)->findOneBy(['username' => $username]);
-        if (count($user) <= 0) {
+        if (!$user) {
             try {
                 $user = $this->newUser($info, $username);
             } catch (\Exception $e) {
@@ -104,7 +104,7 @@ class LDAPUserService
         $email = $this->getEmail($info);
 
         $user = $this->dm->getRepository(User::class)->findOneBy(['email' => $email]);
-        if (count($user) <= 0) {
+        if (!$user) {
             $user = new User();
             $user->setEmail($email);
         } else {
