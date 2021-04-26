@@ -24,13 +24,8 @@ class AuthenticationHandler implements AuthenticationSuccessHandlerInterface
     protected $ldapUserService;
     protected $httpUtils;
 
-    public function __construct(
-        ContainerInterface $container,
-        LDAPService $LDAPService,
-        LDAPUserService $LDAPUserService,
-        HttpUtils $HttpUtils,
-        SessionInterface $session
-    ) {
+    public function __construct(ContainerInterface $container, LDAPService $LDAPService, LDAPUserService $LDAPUserService, HttpUtils $HttpUtils, SessionInterface $session)
+    {
         $this->container = $container;
         $this->ldapService = $LDAPService;
         $this->ldapUserService = $LDAPUserService;
@@ -60,8 +55,15 @@ class AuthenticationHandler implements AuthenticationSuccessHandlerInterface
         return $this->httpUtils->createRedirectResponse($request, $this->determineTargetUrl());
     }
 
-    private function determineTargetUrl(): string
+    private function determineTargetUrl()
     {
-        return $this->session->get('_security.main.target_path') ?? $this->session->get('target_path') ?? 'homepage';
+        if (null !== $this->session->get('_security.main.target_path')) {
+            return $this->session->get('_security.main.target_path');
+        }
+        if (null !== $this->session->get('target_path')) {
+            return $this->session->get('target_path');
+        }
+
+        return 'homepage';
     }
 }
