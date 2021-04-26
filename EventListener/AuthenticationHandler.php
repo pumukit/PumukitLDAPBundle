@@ -2,10 +2,8 @@
 
 namespace Pumukit\LDAPBundle\EventListener;
 
-use FOS\UserBundle\Model\UserInterface;
 use Pumukit\LDAPBundle\Services\LDAPService;
 use Pumukit\LDAPBundle\Services\LDAPUserService;
-use Pumukit\SchemaBundle\Document\User;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
