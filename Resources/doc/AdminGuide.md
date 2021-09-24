@@ -29,12 +29,18 @@ with your LDAP server parameters:
 ```
 pumukit_ldap:
     server: 'ldap://localhost'
+    host: localhost
+    port: 389
+    useSSL: true
     bind_rdn: 'cn=readonly,ou=teachers,dc=campusdomar,dc=es'
     bind_password: 'readonly'
     base_dn: 'ou=teachers,dc=campusdomar,dc=es'
 ```
 
 * `server` defines the DNS address of the LDAP Server.
+* `host` defines the host of the LDAP Server.
+* `port` defines the port of the LDAP Server.
+* `useSSL` defines if the connection use SSL
 * `bind_rdn` defines the DN of the search engine. If not specified, anonymous bind is attempted.
 * `bind_password` defines the password of the search engine. If not specified, anonymous bind is attempted.
 * `base_dn` defines an user DN of the LDAP Server.

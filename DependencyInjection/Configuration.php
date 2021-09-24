@@ -5,30 +5,35 @@ namespace Pumukit\LDAPBundle\DependencyInjection;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
-/**
- * This is the class that validates and merges configuration from your app/config files.
- *
- * To learn more see {@link http://symfony.com/doc/current/cookbook/bundles/extension.html#cookbook-bundles-extension-config-class}
- */
 class Configuration implements ConfigurationInterface
 {
-    /**
-     * {@inheritdoc}
-     */
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('pumukit_ldap');
-
-        // Here you should define the parameters that are allowed to
-        // configure your bundle. See the documentation linked above for
-        // more information on that topic.
 
         $rootNode
             ->children()
             ->scalarNode('server')
             ->isRequired()
             ->info('LDAP Server DNS address')
+            ->end()
+            ->scalarNode('host')
+            ->isRequired()
+            ->info('LDAP host')
+            ->end()
+            ->scalarNode('port')
+            ->isRequired()
+            ->info('LDAP port')
+            ->end()
+            ->integerNode('version')
+            ->defaultValue(3)
+            ->info('LDAP version')
+            ->end()
+            ->booleanNode('useSSL')
+            ->isRequired()
+            ->defaultTrue()
+            ->info('LDAP use SSL')
             ->end()
             ->scalarNode('bind_rdn')
             ->defaultNull()
