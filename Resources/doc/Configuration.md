@@ -1,8 +1,7 @@
-Security configuration
-======================
+PumukitLDAPBundle Configuration
+===============================
 
-To configure LDAP update your `app/config/security.yml` file:
-
+# Add this configuration to use LDAP as SSO on security.yaml
 ```
 security:
     providers:
@@ -14,7 +13,6 @@ security:
                 search_password: xxxxx
                 default_roles: ROLE_USER
                 uid_key: uid
-
         ...
         
     firewalls:
@@ -44,27 +42,23 @@ If you want to use just LDAP login add this parameter to the main firewall under
 
 ```
 
-Update your `app/config/parameters.yml` file with:
 
-
+# Default configuration for extension with alias: "pumukit_ldap"
 ```
 pumukit_ldap:
-    server: 'your LDAP server'
-    bind_rdn: 'uid=example,ou=sistema,dc=example,dc=es'
-    bind_password: xxxxxx
-    base_dn: 'ou=people,dc=example,dc=es'
+    server: 'ldap://localhost'
+    host: localhost
+    port: 389
+    useSSL: true
+    bind_rdn: 'cn=readonly,ou=teachers,dc=exampledomain,dc=es'
+    bind_password: 'readonly'
+    base_dn: 'ou=teachers,dc=exampledomain,dc=es'
 ```
 
-Update your `app/config/services.yml` file with:
-
-```
-services:
-    ldap:
-        class: Symfony\Component\Ldap\LdapClient
-        arguments:
-            - host.com   # host
-            - 389         # port
-            - 3           # version
-            - false       # SSL (true or false)
-            - false        # TLS (true or false) 
-```
+* `server` defines the DNS address of the LDAP Server.
+* `host` defines the host of the LDAP Server.
+* `port` defines the port of the LDAP Server.
+* `useSSL` defines if the connection use SSL
+* `bind_rdn` defines the DN of the search engine. If not specified, anonymous bind is attempted.
+* `bind_password` defines the password of the search engine. If not specified, anonymous bind is attempted.
+* `base_dn` defines a user DN of the LDAP Server.

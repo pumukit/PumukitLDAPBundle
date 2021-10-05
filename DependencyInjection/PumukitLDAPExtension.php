@@ -15,6 +15,10 @@ class PumukitLDAPExtension extends Extension
         $config = $this->processConfiguration($configuration, $configs);
 
         $container->setParameter('pumukit_ldap.server', $config['server']);
+        $container->setParameter('pumukit_ldap.host', $config['host']);
+        $container->setParameter('pumukit_ldap.port', $config['port']);
+        $container->setParameter('pumukit_ldap.version', $config['version']);
+        $container->setParameter('pumukit_ldap.useSSL', $config['useSSL']);
         $container->setParameter('pumukit_ldap.bind_rdn', $config['bind_rdn']);
         $container->setParameter('pumukit_ldap.bind_password', $config['bind_password']);
         $container->setParameter('pumukit_ldap.base_dn', $config['base_dn']);

@@ -4,6 +4,10 @@ services:
     autoconfigure: true
     public:        true
     bind:
+      $host: '%pumukit_ldap.host%'
+      $port: '%pumukit_ldap.port%'
+      $version: '%pumukit_ldap.version%'
+      $useSSL: '%pumukit_ldap.useSSL%'
       $server: '%pumukit_ldap.server%'
       $bindRdn: '%pumukit_ldap.bind_rdn%'
       $bindPassword: '%pumukit_ldap.bind_password%'
