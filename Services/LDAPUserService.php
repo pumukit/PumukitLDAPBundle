@@ -14,9 +14,9 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 class LDAPUserService
 {
-    const EDU_PERSON_AFFILIATION = 'edupersonaffiliation';
-    const IRISCLASSIFCODE = 'irisclassifcode';
-    const ORIGIN = 'ldap';
+    public const EDU_PERSON_AFFILIATION = 'edupersonaffiliation';
+    public const IRISCLASSIFCODE = 'irisclassifcode';
+    public const ORIGIN = 'ldap';
 
     protected $dm;
     protected $userService;
@@ -45,15 +45,7 @@ class LDAPUserService
         $this->logger = $logger;
     }
 
-    /**
-     * @param array       $info
-     * @param string|null $username
-     *
-     * @throws \Exception
-     *
-     * @return User
-     */
-    public function createUser($info, $username)
+    public function createUser(array $info, ?string $username)
     {
         if (!isset($username)) {
             throw new \InvalidArgumentException('Uid is not set ');
@@ -79,12 +71,7 @@ class LDAPUserService
         return $user;
     }
 
-    /**
-     * @param array $info
-     *
-     * @return string
-     */
-    public function getEmail($info)
+    public function getEmail(array $info): string
     {
         if (isset($info['mail'][0])) {
             return $info['mail'][0];
@@ -93,13 +80,7 @@ class LDAPUserService
         throw new AuthenticationException('Missing LDAP attribute email');
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return User
-     */
-    protected function newUser($info, $username)
+    protected function newUser(array $info, string $username): User
     {
         $email = $this->getEmail($info);
 
@@ -132,20 +113,12 @@ class LDAPUserService
         return $user;
     }
 
-    /**
-     * @param string $key
-     * @param string $type
-     *
-     * @throws \Exception
-     *
-     * @return Group
-     */
-    protected function getGroup($key, $type = null)
+    protected function getGroup(string $key, ?string $type = null): Group
     {
         $cleanKey = $this->getGroupKey($key, $type);
         $cleanName = $this->getGroupName($key, $type);
 
-        $group = $this->dm->getRepository(Group::class)->findOneByKey($cleanKey);
+        $group = $this->dm->getRepository(Group::class)->findOneBy(['key' => $cleanKey]);
         if ($group) {
             return $group;
         }
@@ -158,35 +131,17 @@ class LDAPUserService
         return $group;
     }
 
-    /**
-     * @param string $key
-     * @param string $type
-     *
-     * @return string|string[]|null
-     */
-    protected function getGroupKey($key, $type = null)
+    protected function getGroupKey(string $key, ?string $type = null)
     {
         return preg_replace('/\W/', '', $key);
     }
 
-    /**
-     * @param string $key
-     * @param string $type
-     *
-     * @return mixed
-     */
-    protected function getGroupName($key, $type = null)
+    protected function getGroupName(string $key, ?string $type = null)
     {
         return $key;
     }
 
-    /**
-     * @param array $info
-     * @param User  $user
-     *
-     * @throws \Exception
-     */
-    protected function promoteUser($info, $user)
+    protected function promoteUser(array $info, User $user)
     {
         $permissionProfileAutoPub = $this->permissionProfileService->getByName('Auto Publisher');
         $permissionProfileAdmin = $this->permissionProfileService->getByName('Administrator');
@@ -220,13 +175,7 @@ class LDAPUserService
         }
     }
 
-    /**
-     * @param array $info
-     * @param User  $user
-     *
-     * @return mixed
-     */
-    protected function updateGroups($info, $user)
+    protected function updateGroups(array $info, User $user)
     {
         $aGroups = [];
         if (isset($info[self::EDU_PERSON_AFFILIATION][0])) {
@@ -286,15 +235,7 @@ class LDAPUserService
         return $user;
     }
 
-    /**
-     * @param array $info
-     * @param User  $user
-     *
-     * @throws \Exception
-     *
-     * @return mixed
-     */
-    protected function updateUser($info, $user)
+    protected function updateUser(array $info, User $user)
     {
         if (isset($info['mail'][0])) {
             $user->setEmail($info['mail'][0]);
@@ -309,57 +250,27 @@ class LDAPUserService
         return $user;
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return bool
-     */
-    protected function isAutoPub($info, $username)
+    protected function isAutoPub(array $info, string $username): bool
     {
         return false;
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return bool
-     */
-    protected function isAdmin($info, $username)
+    protected function isAdmin(array $info, string $username): bool
     {
         return false;
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return bool
-     */
-    protected function isIngestor($info, $username)
+    protected function isIngestor(array $info, string $username): bool
     {
         return false;
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return bool
-     */
-    protected function isPublisher($info, $username)
+    protected function isPublisher(array $info, string $username): bool
     {
         return false;
     }
 
-    /**
-     * @param array  $info
-     * @param string $username
-     *
-     * @return bool
-     */
-    protected function isViewer($info, $username)
+    protected function isViewer(array $info, string $username): bool
     {
         return false;
     }

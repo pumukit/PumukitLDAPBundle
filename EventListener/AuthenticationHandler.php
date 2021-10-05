@@ -14,7 +14,7 @@ use Symfony\Component\Security\Http\HttpUtils;
 
 class AuthenticationHandler implements AuthenticationSuccessHandlerInterface
 {
-    const LDAP_ID_KEY = 'uid';
+    public const LDAP_ID_KEY = 'uid';
 
     protected $session;
     protected $container;

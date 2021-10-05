@@ -23,7 +23,7 @@ class PumukitLDAPExtension extends Extension
         $container->setParameter('pumukit_ldap.bind_password', $config['bind_password']);
         $container->setParameter('pumukit_ldap.base_dn', $config['base_dn']);
 
-        $loader = new Loader\XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
-        $loader->load('services.xml');
+        $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
+        $loader->load('pumukit_ldap.yaml');
     }
 }
