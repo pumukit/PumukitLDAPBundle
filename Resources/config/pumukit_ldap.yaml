@@ -13,11 +13,6 @@ services:
       $bindPassword: '%pumukit_ldap.bind_password%'
       $baseDn: '%pumukit_ldap.base_dn%'
 
-  Symfony\Component\Ldap\LdapClient:
-    class: Symfony\Component\Ldap\LdapClient
-    arguments:
-      - '%pumukit_ldap.server%'
-
   Pumukit\LDAPBundle\Controller\:
     resource: '../../Controller'
     tags: ['controller.service_arguments']
