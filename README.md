@@ -12,7 +12,7 @@ composer require teltek/pumukit-ldap-bundle
 if not, add this to config/bundles.php
 
 ```
-Pumukit/LDAPBundle/PumukitLDAPBundle::class => ['all' => true]
+Pumukit\LDAPBundle\PumukitLDAPBundle::class => ['all' => true]
 ```
 
 Then execute the following commands
