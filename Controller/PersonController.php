@@ -36,8 +36,8 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/button", name="pumukit_ldap_person_button")
-     * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
+     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
+     * @ParamConverter("role", options={"id" = "roleId"})
      * @Template("@PumukitLDAP/Person/button.html.twig")
      */
     public function buttonAction(Request $request, MultimediaObject $multimediaObject, Role $role): array
@@ -53,8 +53,8 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/listautocomplete/{mmId}/{roleId}", name="pumukit_ldap_person_listautocomplete")
-     * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
+     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
+     * @ParamConverter("role", options={"id" = "roleId"})
      * @Template("@PumukitLDAP/Person/listautocomplete.html.twig")
      */
     public function listautocompleteAction(MultimediaObject $multimediaObject, Role $role): array
@@ -95,8 +95,8 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/link/{mmId}/{roleId}", name="pumukit_ldap_person_link")
-     * @ParamConverter("multimediaObject", class="PumukitSchemaBundle:MultimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", class="PumukitSchemaBundle:Role", options={"id" = "roleId"})
+     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
+     * @ParamConverter("role", options={"id" = "roleId"})
      */
     public function linkAction(Request $request, MultimediaObject $multimediaObject, Role $role): Response
     {
