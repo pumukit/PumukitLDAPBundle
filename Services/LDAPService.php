@@ -31,6 +31,7 @@ class LDAPService
         if (!$this->isConfigured()) {
             throw new \Exception('LDAP is not configured');
         }
+        $linkIdentifier = false;
 
         try {
             $linkIdentifier = $this->createConnection();
