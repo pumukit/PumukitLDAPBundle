@@ -14,9 +14,9 @@ use Symfony\Component\Security\Core\Exception\AuthenticationException;
 
 class LDAPUserService
 {
-    const EDU_PERSON_AFFILIATION = 'edupersonaffiliation';
-    const IRISCLASSIFCODE = 'irisclassifcode';
-    const ORIGIN = 'ldap';
+    public const EDU_PERSON_AFFILIATION = 'edupersonaffiliation';
+    public const IRISCLASSIFCODE = 'irisclassifcode';
+    public const ORIGIN = 'ldap';
 
     protected $dm;
     protected $userService;

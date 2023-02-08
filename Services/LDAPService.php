@@ -21,54 +21,39 @@ class LDAPService
         $this->logger = $logger;
     }
 
-    /**
-     * Is Configured.
-     *
-     * Checks if all the parameters are defined
-     */
-    public function isConfigured()
+    public function isConfigured(): bool
     {
-        return ($this->server) ? true : false;
+        return (bool)$this->server;
     }
 
-    /**
-     * Check connection.
-     *
-     * @return bool true if connects, false otherwise
-     */
     public function checkConnection()
     {
-        if ($this->isConfigured()) {
-            try {
-                $linkIdentifier = ldap_connect($this->server);
-                ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
-                if ($linkIdentifier) {
-                    $result = ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
-                    ldap_close($linkIdentifier);
+        if (!$this->isConfigured()) {
+            throw new \Exception('LDAP is not configured');
+        }
 
-                    return $result;
-                }
-            } catch (\Exception $e) {
-                $this->logger->debug(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+        try {
+            $linkIdentifier = $this->createConnection();
+            $this->addDebugOptions($linkIdentifier);
+            $this->addOptions($linkIdentifier);
 
-                return false;
+            if ($linkIdentifier) {
+                $result = $this->bindConnection($linkIdentifier);
+                ldap_close($linkIdentifier);
+
+                return $result;
             }
+        } catch (\Exception $e) {
+            return ldap_error($linkIdentifier);
         }
 
         return false;
     }
 
     /**
-     * Is user
-     * Checks if user with given password
-     * exists in LDAP Server.
-     *
-     * @param string $user User name
-     * @param string $pass Password to verify
-     *
-     * @return bool true if user exists, false otherwise
+     * Is user Checks if user with given password exists in LDAP Server.
      */
-    public function isUser($user = '', $pass = '')
+    public function isUser(string $user = '', string $pass = ''): bool
     {
         if ('' === $pass) {
             return false;
@@ -76,10 +61,10 @@ class LDAPService
         $ret = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -88,7 +73,7 @@ class LDAPService
                         $ret = @ldap_bind($linkIdentifier, $dn, $pass);
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -99,23 +84,15 @@ class LDAPService
         return $ret;
     }
 
-    /**
-     * Obtiene el nombre completo de usuario del
-     * servidor ldap.
-     *
-     * @param string $user nombre del usuario
-     *
-     * @return string nombre completo del usuario
-     */
-    public function getName($user)
+    public function getName(string $user)
     {
         $name = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -123,7 +100,7 @@ class LDAPService
                         $name = $info[0]['cn'][0];
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -134,25 +111,15 @@ class LDAPService
         return $name;
     }
 
-    /**
-     * Obtiene el correo electronico de usuario del
-     * servidor ldap.
-     *
-     * @public
-     *
-     * @param string $user nombre del usuario
-     *
-     * @return string correo del usuario
-     */
-    public function getMail($user)
+    public function getMail(string $user)
     {
         $name = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -160,7 +127,7 @@ class LDAPService
                         $name = $info[0]['mail'][0];
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -171,41 +138,19 @@ class LDAPService
         return $name;
     }
 
-    /**
-     * Get all the LDAP info from the user email.
-     *
-     * @public
-     * @pararm string $email
-     *
-     * @param mixed $email
-     *
-     * @return array|false
-     */
-    public function getInfoFromEmail($email)
+    public function getInfoFromEmail(string $email)
     {
         return $this->getInfoFrom('mail', $email);
     }
 
-    /**
-     * Get all the LDAP info from the user email.
-     *
-     * @public
-     * @pararm string $key
-     * @pararm string $value
-     *
-     * @param mixed $key
-     * @param mixed $value
-     *
-     * @return array|false
-     */
-    public function getInfoFrom($key, $value)
+    public function getInfoFrom(string $key, string $value)
     {
         $return = false;
 
-        $linkIdentifier = ldap_connect($this->server);
-        ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+        $linkIdentifier = $this->createConnection();
+        $this->addOptions($linkIdentifier);
         if ($linkIdentifier) {
-            ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+            $this->bindConnection($linkIdentifier);
             $searchResult = ldap_search($linkIdentifier, $this->baseDn, $key.'='.$value, [], 0, 1);
             if ($searchResult) {
                 $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -213,15 +158,13 @@ class LDAPService
                     $return = $info[0];
                 }
             }
-            ldap_close($linkIdentifier);
+            $this->closeConnection($linkIdentifier);
         }
 
         return $return;
     }
 
     /**
-     * Get list of users.
-     *
      * Searches LDAP users by CN or MAIL
      * If CN is an empty string or null and MAIL a given string:
      * - Returns LDAP users with given MAIL
@@ -229,22 +172,17 @@ class LDAPService
      * - Returns LDAP users with given CN
      * If CN and MAIL are strings (equal or different):
      * - Returns LDAP users with given CN and LDAP users with given MAIL
-     *
-     * @param string $cn
-     * @param string $mail
-     *
-     * @return array
      */
-    public function getListUsers($cn = '', $mail = '')
+    public function getListUsers(string $cn = '', string $mail = ''): array
     {
         $limit = 40;
         $out = [];
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $filter = $this->getFilter($cn, $mail);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, $filter, [], 0, $limit);
                 if ($searchResult) {
@@ -261,7 +199,7 @@ class LDAPService
                         }
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -270,6 +208,31 @@ class LDAPService
         }
 
         return $out;
+    }
+
+    public function createConnection()
+    {
+        return ldap_connect($this->server);
+    }
+
+    public function bindConnection($linkIdentifier): bool
+    {
+        return @ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+    }
+
+    public function addOptions($linkIdentifier)
+    {
+        ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+    }
+
+    public function addDebugOptions($linkIdentifier)
+    {
+        ldap_set_option($linkIdentifier, LDAP_OPT_DEBUG_LEVEL, 7);
+    }
+
+    public function closeConnection($linkIdentifier)
+    {
+        ldap_close($linkIdentifier);
     }
 
     /**
@@ -282,13 +245,8 @@ class LDAPService
      * - Returns LDAP query with given CN
      * If CN and MAIL are strings (equal or different):
      * - Returns LDAP query with given CN and LDAP users with given MAIL
-     *
-     * @param string $cn
-     * @param string $mail
-     *
-     * @return string
      */
-    private function getFilter($cn = '', $mail = '')
+    private function getFilter(string $cn = '', string $mail = ''): string
     {
         $filter = ($cn ? 'cn='.$cn : '');
         if ($mail) {
