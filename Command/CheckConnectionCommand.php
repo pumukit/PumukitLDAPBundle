@@ -11,7 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 class CheckConnectionCommand extends ContainerAwareCommand
 {
     private $ldapService;
-    private $username;
 
     protected function configure(): void
     {
