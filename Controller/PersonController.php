@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\LDAPBundle\Controller;
 
 use Doctrine\ODM\MongoDB\DocumentManager;
@@ -19,6 +21,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * @Route("/admin/ldap/person")
+ *
  * @Security("is_granted('ROLE_ACCESS_MULTIMEDIA_SERIES')")
  */
 class PersonController extends AbstractController
@@ -36,8 +39,10 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/button", name="pumukit_ldap_person_button")
+     *
      * @ParamConverter("multimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", options={"id" = "roleId"})
+     *
      * @Template("@PumukitLDAP/Person/button.html.twig")
      */
     public function buttonAction(Request $request, MultimediaObject $multimediaObject, Role $role): array
@@ -53,8 +58,10 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/listautocomplete/{mmId}/{roleId}", name="pumukit_ldap_person_listautocomplete")
+     *
      * @ParamConverter("multimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", options={"id" = "roleId"})
+     *
      * @Template("@PumukitLDAP/Person/listautocomplete.html.twig")
      */
     public function listautocompleteAction(MultimediaObject $multimediaObject, Role $role): array
@@ -95,6 +102,7 @@ class PersonController extends AbstractController
 
     /**
      * @Route("/link/{mmId}/{roleId}", name="pumukit_ldap_person_link")
+     *
      * @ParamConverter("multimediaObject", options={"id" = "mmId"})
      * @ParamConverter("role", options={"id" = "roleId"})
      */
