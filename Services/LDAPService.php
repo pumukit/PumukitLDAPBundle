@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Pumukit\LDAPBundle\Services;
 
 use Psr\Log\LoggerInterface;
@@ -28,26 +30,29 @@ class LDAPService
 
     public function isConfigured(): bool
     {
-        return ($this->server) ? true : false;
+        return (bool)$this->server;
     }
 
     public function checkConnection(): bool
     {
-        if ($this->isConfigured()) {
-            try {
-                $linkIdentifier = ldap_connect($this->server);
-                ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
-                if ($linkIdentifier) {
-                    $result = ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
-                    ldap_close($linkIdentifier);
+        if (!$this->isConfigured()) {
+            throw new \Exception('LDAP is not configured');
+        }
+        $linkIdentifier = false;
 
-                    return $result;
-                }
-            } catch (\Exception $e) {
-                $this->logger->debug(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+        try {
+            $linkIdentifier = $this->createConnection();
+            $this->addDebugOptions($linkIdentifier);
+            $this->addOptions($linkIdentifier);
 
-                return false;
+            if ($linkIdentifier) {
+                $result = $this->bindConnection($linkIdentifier);
+                ldap_close($linkIdentifier);
+
+                return $result;
             }
+        } catch (\Exception $e) {
+            return ldap_error($linkIdentifier);
         }
 
         return false;
@@ -61,10 +66,10 @@ class LDAPService
         $ret = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -73,7 +78,7 @@ class LDAPService
                         $ret = @ldap_bind($linkIdentifier, $dn, $pass);
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -89,10 +94,10 @@ class LDAPService
         $name = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -100,7 +105,7 @@ class LDAPService
                         $name = $info[0]['cn'][0];
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -116,10 +121,10 @@ class LDAPService
         $name = false;
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
                 if ($searchResult) {
                     $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -127,7 +132,7 @@ class LDAPService
                         $name = $info[0]['mail'][0];
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -147,10 +152,10 @@ class LDAPService
     {
         $return = false;
 
-        $linkIdentifier = ldap_connect($this->server);
-        ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+        $linkIdentifier = $this->createConnection();
+        $this->addOptions($linkIdentifier);
         if ($linkIdentifier) {
-            ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+            $this->bindConnection($linkIdentifier);
             $searchResult = ldap_search($linkIdentifier, $this->baseDn, $key.'='.$value, [], 0, 1);
             if ($searchResult) {
                 $info = ldap_get_entries($linkIdentifier, $searchResult);
@@ -158,7 +163,7 @@ class LDAPService
                     $return = $info[0];
                 }
             }
-            ldap_close($linkIdentifier);
+            $this->closeConnection($linkIdentifier);
         }
 
         return $return;
@@ -170,10 +175,10 @@ class LDAPService
         $out = [];
 
         try {
-            $linkIdentifier = ldap_connect($this->server);
-            ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+            $linkIdentifier = $this->createConnection();
+            $this->addOptions($linkIdentifier);
             if ($linkIdentifier) {
-                ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+                $this->bindConnection($linkIdentifier);
                 $filter = $this->getFilter($cn, $mail);
                 $searchResult = ldap_search($linkIdentifier, $this->baseDn, $filter, [], 0, $limit);
                 if ($searchResult) {
@@ -190,7 +195,7 @@ class LDAPService
                         }
                     }
                 }
-                ldap_close($linkIdentifier);
+                $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
             $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
@@ -199,6 +204,31 @@ class LDAPService
         }
 
         return $out;
+    }
+
+    public function createConnection()
+    {
+        return ldap_connect($this->server);
+    }
+
+    public function bindConnection($linkIdentifier): bool
+    {
+        return @ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
+    }
+
+    public function addOptions($linkIdentifier)
+    {
+        ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
+    }
+
+    public function addDebugOptions($linkIdentifier)
+    {
+        ldap_set_option($linkIdentifier, LDAP_OPT_DEBUG_LEVEL, 7);
+    }
+
+    public function closeConnection($linkIdentifier)
+    {
+        ldap_close($linkIdentifier);
     }
 
     private function getFilter(string $cn = '', string $mail = ''): string
