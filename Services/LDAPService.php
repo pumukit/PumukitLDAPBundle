@@ -155,10 +155,14 @@ class LDAPService
             $searchResult = ldap_search($linkIdentifier, $this->baseDn, $key.'='.$value, [], 0, 1);
             if ($searchResult) {
                 $info = ldap_get_entries($linkIdentifier, $searchResult);
+                $this->logger->info('***** Getting user from LDAP: '. $value);
+                $this->logger->info(json_encode($info));
                 if (($info) && (0 != count($info)) && isset($info[0])) {
                     $return = $info[0];
+                    $this->logger->info('----- Info: ' . $return);
                 }
             }
+
             $this->closeConnection($linkIdentifier);
         }
 
