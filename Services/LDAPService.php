@@ -81,7 +81,7 @@ class LDAPService
                 $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
-            $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
 
             throw $e;
         }
@@ -108,7 +108,7 @@ class LDAPService
                 $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
-            $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
 
             throw $e;
         }
@@ -135,7 +135,7 @@ class LDAPService
                 $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
-            $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
 
             throw $e;
         }
@@ -198,7 +198,7 @@ class LDAPService
                 $this->closeConnection($linkIdentifier);
             }
         } catch (\Exception $e) {
-            $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] '.$e->getMessage());
+            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
 
             throw $e;
         }

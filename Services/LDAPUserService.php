@@ -185,14 +185,14 @@ class LDAPUserService
                         $group = $this->getGroup($value, self::EDU_PERSON_AFFILIATION);
                         $this->userService->addGroup($group, $user, true, false);
                         $aGroups[] = $group->getKey();
-                        $this->logger->info(__CLASS__.' ['.__FUNCTION__.'] Added Group: '.$group->getName());
+                        $this->logger->info(self::class.' ['.__FUNCTION__.'] Added Group: '.$group->getName());
                     } catch (\ErrorException $e) {
                         $this->logger->info(
-                            __CLASS__.' ['.__FUNCTION__.'] Invalid Group '.$value.': '.$e->getMessage()
+                            self::class.' ['.__FUNCTION__.'] Invalid Group '.$value.': '.$e->getMessage()
                         );
                     } catch (\Exception $e) {
                         $this->logger->error(
-                            __CLASS__.' ['.__FUNCTION__.'] Error on adding Group '.$value.': '.$e->getMessage()
+                            self::class.' ['.__FUNCTION__.'] Error on adding Group '.$value.': '.$e->getMessage()
                         );
                     }
                 }
@@ -206,14 +206,14 @@ class LDAPUserService
                         $group = $this->getGroup($value, self::IRISCLASSIFCODE);
                         $this->userService->addGroup($group, $user, true, false);
                         $aGroups[] = $group->getKey();
-                        $this->logger->info(__CLASS__.' ['.__FUNCTION__.'] Added Group: '.$group->getName());
+                        $this->logger->info(self::class.' ['.__FUNCTION__.'] Added Group: '.$group->getName());
                     } catch (\ErrorException $e) {
                         $this->logger->info(
-                            __CLASS__.' ['.__FUNCTION__.'] Invalid Group '.$value.': '.$e->getMessage()
+                            self::class.' ['.__FUNCTION__.'] Invalid Group '.$value.': '.$e->getMessage()
                         );
                     } catch (\Exception $e) {
                         $this->logger->error(
-                            __CLASS__.' ['.__FUNCTION__.'] Error on adding Group '.$value.': '.$e->getMessage()
+                            self::class.' ['.__FUNCTION__.'] Error on adding Group '.$value.': '.$e->getMessage()
                         );
                     }
                 }
@@ -226,7 +226,7 @@ class LDAPUserService
                     try {
                         $this->userService->deleteGroup($group, $user, true, false);
                     } catch (\Exception $e) {
-                        $this->logger->error(__CLASS__.' ['.__FUNCTION__.'] Delete group '.$group->getKey().' from user  : '.$e->getMessage());
+                        $this->logger->error(self::class.' ['.__FUNCTION__.'] Delete group '.$group->getKey().' from user  : '.$e->getMessage());
                     }
                 }
             }
