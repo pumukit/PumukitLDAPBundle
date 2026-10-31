@@ -1,44 +1,23 @@
 <div class="modal-header">
-    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span>
-    </button>
-    <h4 class="modal-title" id="myAuxModal{{ template }}Label">{% trans %}new person from LDAP{% endtrans %}</h4>
-    {% if app.user and is_granted(constant('Pumukit\\SchemaBundle\\Security\\Permission::ACCESS_MULTIMEDIA_SERIES')) %}
-        <p>
-            {% trans %}Write the email login of the person you would like to add from the LDAP server. A pull-down menu will be shown, where you can select and use the person data.{% endtrans %}
-            .
-        </p>
-    {% endif %}
+    <h4 class="modal-title">{% trans %}new person from LDAP{% endtrans %}</h4>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans %}Cancel{% endtrans %}"></button>
 </div>
-<div class="modal-body">
-    {% if app.user and is_granted(constant('Pumukit\\SchemaBundle\\Security\\Permission::ACCESS_MULTIMEDIA_SERIES')) %}
-        <fieldset>
-            <div class="form-group">
-                <label for="login" class="control-label">{% trans %}Login{% endtrans %}:</label>
-                <input type="text" name="login" id="login" placeholder="{% trans %}login to search for{% endtrans %}" class="form-control"/>
-                <span id="indicator1" style="display: none" class="input-group-addon">
-                    <img alt="{% trans %}working{% endtrans %}..." src="{{ asset('/bundles/pumukitnewadmin/images/admin/load/spinner.gif') }}" height="18" width="18">
-                </span>
-                <input type="hidden" name="ldap_person_mail" value="" id="ldap_person_mail"/>
-                <input type="hidden" name="ldap_person_cn" value="" id="ldap_person_cn"/>
-                <input type="hidden" name="ldap_mm_id" value="{{ mm.id }}" id="ldap_mm_id"/>
-                <input type="hidden" name="ldap_role_id" value="{{ role.id }}" id="ldap_role_id"/>
-                <input type="hidden" name="ldap_mm_title" value="{{ mm.getTitle() }}" id="ldap_mm_title"/>
-                <input type="hidden" name="ldap_role_name" value="{{ role.getName() }}" id="ldap_role_name"/>
-                <input type="hidden" name="ldap_template" value="{{ template }}" id="ldap_template"/>
-            </div>
-        </fieldset>
-        <div class="modal-footer">
-            <button type="button" class="btn btn-default btn-raised" data-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
-            <button type="button" class="btn btn-primary btn-raised" id="create_ldap_relation" href="#">
-                {% trans %}Use{% endtrans %}
-            </button>
-        </div>
-    {% else %}
-        {% trans %}You don't have enough permissions to access this content.{% endtrans %}
-    {% endif %}
+<div class="modal-body"
+     data-controller="ldap--person-picker"
+     data-ldap--person-picker-autocomplete-url-value="{{ path('pumukit_ldap_person_autocomplete') }}"
+     data-ldap--person-picker-link-url-value="{{ path('pumukit_ldap_person_link', {'mmId': mm.id, 'roleId': role.id}) }}"
+     data-ldap--person-picker-target-value="#{{ role.id }}_person_mms{{ template }}"
+     data-ldap--person-picker-preview-value="{{ template != '_template' ? path('pumukitnewadmin_mms_show', {'id': mm.id}) : '' }}"
+     data-ldap--person-picker-modal-value="#myModal"
+     data-ldap--person-picker-messages-value="{{ {linked: 'Person successfully associated to Multimedia Object'|trans ~ ' \'' ~ mm.getTitle() ~ '\' ' ~ 'with role'|trans ~ ' \'' ~ role.getName() ~ '\'', selectFirst: 'Select before a person'|trans}|json_encode }}">
+    <p>{% trans %}Write the email login of the person you would like to add from the LDAP server. A pull-down menu will be shown, where you can select and use the person data.{% endtrans %}</p>
+    <div class="mb-3">
+        <label for="ldap_login" class="form-label">{% trans %}Login{% endtrans %}:</label>
+        <input type="text" id="ldap_login" class="form-control" data-ldap--person-picker-target="login" data-action="input->ldap--person-picker#clear"/>
+        <input type="hidden" id="ldap_person_mail" value="" data-ldap--person-picker-target="mail"/>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans %}Cancel{% endtrans %}</button>
+        <button type="button" class="btn btn-primary" data-action="click->ldap--person-picker#use">{% trans %}Use{% endtrans %}</button>
+    </div>
 </div>
-
-<div style="clear:right"></div>
-{% if app.user and is_granted(constant('Pumukit\\SchemaBundle\\Security\\Permission::ACCESS_MULTIMEDIA_SERIES')) %}
-    <script type="text/javascript" src="{{ path('pumukit_ldap_js') }}"></script>
-{% endif %}

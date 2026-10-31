@@ -25,10 +25,6 @@
         <source>login to search for</source>
         <target state="translated">登錄搜索</target>
       </trans-unit>
-      <trans-unit id="3VrOngG" resname="working">
-        <source>working</source>
-        <target state="translated">工作</target>
-      </trans-unit>
       <trans-unit id="GXZu1sy" resname="Cancel">
         <source>Cancel</source>
         <target state="translated">取消</target>

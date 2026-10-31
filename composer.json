@@ -18,9 +18,8 @@
         }
     ],
     "require": {
-        "php": "^8.2",
-        "pumukit/pumukit": "^5.0",
-        "symfony/ldap": "^5.0",
+        "php": "^8.5",
+        "pumukit/pumukit": "^6.0",
         "ext-ldap": "*"
     },
     "autoload": {

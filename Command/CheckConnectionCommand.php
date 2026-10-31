@@ -5,46 +5,53 @@ declare(strict_types=1);
 namespace Pumukit\LDAPBundle\Command;
 
 use Pumukit\LDAPBundle\Services\LDAPService;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'pumukit:ldap:check:connection', description: 'Check the connection and the bind to the LDAP server')]
 class CheckConnectionCommand extends Command
 {
-    private $ldapService;
-
-    public function __construct(LDAPService $ldapService)
-    {
-        $this->ldapService = $ldapService;
-
+    public function __construct(
+        private readonly LDAPService $ldapService,
+        private readonly string $server,
+        private readonly ?string $bindRdn,
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this
-            ->setName('pumukit:ldap:check:connection')
-            ->setDescription('Check connection to LDAP.')
-            ->setHelp(
-                <<<'EOT'
-This command use parameters values from LDAP to check the connection.
+        $this->setHelp(
+            <<<'EOT'
+                Connects to the configured LDAP server and binds with bind_rdn (or anonymously).
 
-Example:
-    pumukit:ldap:check:connection
-EOT
-            )
-        ;
+                Example:
+                    php bin/console pumukit:ldap:check:connection
+                EOT
+        );
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): ?int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
+        $io->definitionList(
+            ['Server' => $this->server],
+            ['Bind' => $this->bindRdn ?? 'anonymous'],
+        );
+
         try {
-            $result = $this->ldapService->checkConnection();
-            $output->writeln($result);
-        } catch (\Exception $exception) {
-            $output->writeln('Cannot connect with LDAP');
+            $this->ldapService->checkConnection();
+        } catch (\Throwable $exception) {
+            $io->error($exception->getMessage());
+
+            return Command::FAILURE;
         }
 
-        return 0;
+        $io->success('Connected to the LDAP server');
+
+        return Command::SUCCESS;
     }
 }

@@ -5,19 +5,27 @@ services:
     public:        true
     bind:
       $server: '%pumukit_ldap.server%'
+      $version: '%pumukit_ldap.version%'
+      $startTls: '%pumukit_ldap.start_tls%'
       $bindRdn: '%pumukit_ldap.bind_rdn%'
       $bindPassword: '%pumukit_ldap.bind_password%'
       $baseDn: '%pumukit_ldap.base_dn%'
+      $enabled: '%pumukit_ldap.enable%'
+      $onLoginEnabled: '%pumukit_ldap.on_login.enable%'
+      $onLoginLdapAttribute: '%pumukit_ldap.on_login.ldap_attribute%'
+      $onLoginUserField: '%pumukit_ldap.on_login.user_field%'
 
   Pumukit\LDAPBundle\Controller\:
     resource: '../../Controller'
     tags: ['controller.service_arguments']
 
+  Pumukit\LDAPBundle\Command\:
+    resource: '../../Command'
+
   Pumukit\LDAPBundle\Services\LDAPService:
     class: Pumukit\LDAPBundle\Services\LDAPService
 
-  Pumukit\LDAPBundle\EventListener\AuthenticationHandler:
-    class: Pumukit\LDAPBundle\EventListener\AuthenticationHandler
-
-  Pumukit\LDAPBundle\Services\LDAPUserService:
-    class: Pumukit\LDAPBundle\Services\LDAPUserService
+  Pumukit\LDAPBundle\EventListener\LoginListener:
+    class: Pumukit\LDAPBundle\EventListener\LoginListener
+    tags:
+      - { name: kernel.event_listener, event: security.interactive_login, method: onInteractiveLogin }

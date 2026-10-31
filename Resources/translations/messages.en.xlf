@@ -25,10 +25,6 @@
         <source>login to search for</source>
         <target>login to search for</target>
       </trans-unit>
-      <trans-unit id="3VrOngG" resname="working">
-        <source>working</source>
-        <target>working</target>
-      </trans-unit>
       <trans-unit id="GXZu1sy" resname="Cancel">
         <source>Cancel</source>
         <target>Cancel</target>

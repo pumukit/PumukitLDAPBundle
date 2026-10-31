@@ -4,153 +4,130 @@ declare(strict_types=1);
 
 namespace Pumukit\LDAPBundle\Controller;
 
-use Doctrine\ODM\MongoDB\DocumentManager;
+use Doctrine\Bundle\MongoDBBundle\Attribute\MapDocument;
+use Monolog\Attribute\WithMonologChannel;
+use Psr\Log\LoggerInterface;
 use Pumukit\LDAPBundle\Services\LDAPService;
 use Pumukit\SchemaBundle\Document\MultimediaObject;
 use Pumukit\SchemaBundle\Document\Person;
 use Pumukit\SchemaBundle\Document\Role;
+use Pumukit\SchemaBundle\Security\Permission;
 use Pumukit\SchemaBundle\Services\PersonService;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\ParamConverter;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Security;
-use Sensio\Bundle\FrameworkExtraBundle\Configuration\Template;
+use Symfony\Bridge\Twig\Attribute\Template;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
-/**
- * @Route("/admin/ldap/person")
- *
- * @Security("is_granted('ROLE_ACCESS_MULTIMEDIA_SERIES')")
- */
+#[Route('/admin/ldap/person')]
+#[IsGranted(Permission::ACCESS_MULTIMEDIA_SERIES)]
+#[WithMonologChannel('ldap')]
 class PersonController extends AbstractController
 {
-    private $documentManager;
-    private $LDAPService;
-    private $personService;
+    public function __construct(
+        private readonly LDAPService $ldapService,
+        private readonly PersonService $personService,
+        private readonly LoggerInterface $logger,
+    ) {}
 
-    public function __construct(DocumentManager $documentManager, LDAPService $LDAPService, PersonService $personService)
+    public function buttonAction(#[MapDocument(id: 'mmId')] MultimediaObject $multimediaObject, #[MapDocument(id: 'roleId')] Role $role): Response
     {
-        $this->documentManager = $documentManager;
-        $this->LDAPService = $LDAPService;
-        $this->personService = $personService;
-    }
-
-    /**
-     * @Route("/button", name="pumukit_ldap_person_button")
-     *
-     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", options={"id" = "roleId"})
-     *
-     * @Template("@PumukitLDAP/Person/button.html.twig")
-     */
-    public function buttonAction(Request $request, MultimediaObject $multimediaObject, Role $role): array
-    {
-        $ldapConnected = $this->LDAPService->checkConnection();
-
-        return [
-            'ldap_connected' => $ldapConnected,
-            'mm' => $multimediaObject,
-            'role' => $role,
-        ];
-    }
-
-    /**
-     * @Route("/listautocomplete/{mmId}/{roleId}", name="pumukit_ldap_person_listautocomplete")
-     *
-     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", options={"id" = "roleId"})
-     *
-     * @Template("@PumukitLDAP/Person/listautocomplete.html.twig")
-     */
-    public function listautocompleteAction(MultimediaObject $multimediaObject, Role $role): array
-    {
-        $template = $multimediaObject->isPrototype() ? '_template' : '';
-
-        return [
-            'mm' => $multimediaObject,
-            'role' => $role,
-            'template' => $template,
-        ];
-    }
-
-    /**
-     * @Route("/autocomplete", name="pumukit_ldap_person_autocomplete")
-     */
-    public function autocompleteAction(Request $request)
-    {
-        $login = $request->get('term');
-        $out = [];
-
-        try {
-            $people = $this->LDAPService->getListUsers('*'.$login.'*', '*'.$login.'*');
-            foreach ($people as $person) {
-                $out[] = [
-                    'value' => $person['cn'],
-                    'label' => $person['cn'],
-                    'mail' => $person['mail'],
-                    'cn' => $person['cn'],
-                ];
-            }
-        } catch (\Exception $e) {
-            return new Response($e->getMessage(), 400);
+        if (!$this->ldapService->isConfigured()) {
+            return new Response();
         }
 
-        return new JsonResponse($out);
+        return $this->render('@PumukitLDAP/Person/button.html.twig', [
+            'mm' => $multimediaObject,
+            'role' => $role,
+        ]);
     }
 
-    /**
-     * @Route("/link/{mmId}/{roleId}", name="pumukit_ldap_person_link")
-     *
-     * @ParamConverter("multimediaObject", options={"id" = "mmId"})
-     * @ParamConverter("role", options={"id" = "roleId"})
-     */
-    public function linkAction(Request $request, MultimediaObject $multimediaObject, Role $role): Response
+    #[Route('/listautocomplete/{mmId}/{roleId}', name: 'pumukit_ldap_person_listautocomplete', methods: ['GET'])]
+    #[Template('@PumukitLDAP/Person/listautocomplete.html.twig')]
+    public function listautocompleteAction(#[MapDocument(id: 'mmId')] MultimediaObject $multimediaObject, #[MapDocument(id: 'roleId')] Role $role): array
     {
-        $cn = $request->get('cn');
-        $email = $request->get('mail');
+        $this->checkEnabled();
+
+        return [
+            'mm' => $multimediaObject,
+            'role' => $role,
+            'template' => $multimediaObject->isPrototype() ? '_template' : '',
+        ];
+    }
+
+    #[Route('/autocomplete', name: 'pumukit_ldap_person_autocomplete', methods: ['GET'])]
+    public function autocompleteAction(Request $request): Response
+    {
+        $this->checkEnabled();
+
+        $term = trim($request->query->getString('term'));
+        if (mb_strlen($term) < 2) {
+            return new JsonResponse([]);
+        }
+
+        try {
+            $people = $this->ldapService->searchUsers($term);
+        } catch (\Throwable $exception) {
+            return new Response($exception->getMessage(), Response::HTTP_BAD_GATEWAY);
+        }
+
+        return new JsonResponse(array_map(static fn (array $person): array => ['mail' => $person['mail'], 'cn' => $person['cn']], $people));
+    }
+
+    #[Route('/link/{mmId}/{roleId}', name: 'pumukit_ldap_person_link', methods: ['POST'])]
+    public function linkAction(Request $request, #[MapDocument(id: 'mmId')] MultimediaObject $multimediaObject, #[MapDocument(id: 'roleId')] Role $role): Response
+    {
+        $this->checkEnabled();
+
         $personalScopeRoleCode = $this->personService->getPersonalScopeRoleCode();
+        if ($role->getCod() === $personalScopeRoleCode) {
+            $this->denyAccessUnlessGranted(Permission::ADD_OWNER);
+        }
+
+        $mail = trim($request->request->getString('mail'));
+        if ('' === $mail) {
+            return new Response('Missing email', Response::HTTP_BAD_REQUEST);
+        }
 
         try {
-            $person = $this->personService->findPersonByEmail($email);
-            if (null === $person) {
-                $person = $this->createPersonFromLDAP($cn, $email);
-            }
+            $person = $this->personService->findPersonByEmail($mail) ?? $this->createPersonFromLDAP($mail);
             $multimediaObject = $this->personService->createRelationPerson($person, $role, $multimediaObject);
-        } catch (\Exception $e) {
-            return new Response($e->getMessage(), 400);
+        } catch (\Throwable $exception) {
+            return new Response($exception->getMessage(), Response::HTTP_BAD_REQUEST);
         }
-        $template = $multimediaObject->isPrototype() ? '_template' : '';
 
-        return $this->render(
-            '@PumukitNewAdmin/Person/listrelation.html.twig',
-            [
-                'people' => $multimediaObject->getPeopleByRole($role, true),
-                'role' => $role,
-                'personal_scope_role_code' => $personalScopeRoleCode,
-                'mm' => $multimediaObject,
-                'template' => $template,
-            ]
-        );
+        return $this->render('@PumukitNewAdmin/Person/listrelation.html.twig', [
+            'people' => $multimediaObject->getPeopleByRole($role, true),
+            'role' => $role,
+            'personal_scope_role_code' => $personalScopeRoleCode,
+            'mm' => $multimediaObject,
+            'template' => $multimediaObject->isPrototype() ? '_template' : '',
+        ]);
     }
 
-    private function createPersonFromLDAP(string $cn = '', string $mail = ''): Person
+    private function createPersonFromLDAP(string $mail): Person
     {
-        try {
-            $aux = $this->LDAPService->getListUsers('', $mail);
-            if (0 === count($aux)) {
-                throw new \InvalidArgumentException('There is no LDAP user with the name "'.$cn.'" and email "'.$mail.'"');
-            }
-            $person = new Person();
-            $person->setName($aux[0]['cn']);
-            $person->setEmail($aux[0]['mail']);
-            $this->documentManager->persist($person);
-            $this->documentManager->flush();
-        } catch (\Exception $e) {
-            throw $e;
+        $users = $this->ldapService->getListUsers('', $mail);
+        if (!$users) {
+            throw new \InvalidArgumentException(sprintf('There is no LDAP user with the email "%s"', $mail));
         }
+
+        $person = new Person();
+        $person->setName($users[0]['cn']);
+        $person->setEmail($users[0]['mail']);
+        $this->personService->savePerson($person);
+        $this->logger->info('Person created from LDAP', ['email' => $users[0]['mail']]);
 
         return $person;
+    }
+
+    private function checkEnabled(): void
+    {
+        if (!$this->ldapService->isConfigured()) {
+            throw new NotFoundHttpException();
+        }
     }
 }

@@ -4,244 +4,178 @@ declare(strict_types=1);
 
 namespace Pumukit\LDAPBundle\Services;
 
+use LDAP\Connection;
+use Monolog\Attribute\WithMonologChannel;
 use Psr\Log\LoggerInterface;
 
+#[WithMonologChannel('ldap')]
 class LDAPService
 {
-    private $server;
-    private $bindRdn;
-    private $bindPassword;
-    private $baseDn;
-    private $logger;
+    public const LIST_LIMIT = 40;
+    private const NETWORK_TIMEOUT = 5;
 
     public function __construct(
-        string $server,
-        string $bindRdn,
-        string $bindPassword,
-        string $baseDn,
-        LoggerInterface $logger
-    ) {
-        $this->server = $server;
-        $this->bindRdn = $bindRdn;
-        $this->bindPassword = $bindPassword;
-        $this->baseDn = $baseDn;
-        $this->logger = $logger;
-    }
+        private readonly string $server,
+        private readonly string $baseDn,
+        private readonly LoggerInterface $logger,
+        private readonly ?string $bindRdn = null,
+        private readonly ?string $bindPassword = null,
+        private readonly int $version = 3,
+        private readonly bool $startTls = false,
+        private readonly bool $enabled = true,
+    ) {}
 
     public function isConfigured(): bool
     {
-        return (bool) $this->server;
+        return $this->enabled && '' !== $this->server;
     }
 
     public function checkConnection(): bool
     {
-        if (!$this->isConfigured()) {
-            throw new \Exception('LDAP is not configured');
-        }
-        $linkIdentifier = false;
+        $connection = $this->connect();
+        ldap_unbind($connection);
 
-        try {
-            $linkIdentifier = $this->createConnection();
-            $this->addDebugOptions($linkIdentifier);
-            $this->addOptions($linkIdentifier);
-
-            if ($linkIdentifier) {
-                $result = $this->bindConnection($linkIdentifier);
-                ldap_close($linkIdentifier);
-
-                return $result;
-            }
-        } catch (\Exception $e) {
-            throw new \Exception(ldap_error($linkIdentifier));
-        }
-
-        return false;
+        return true;
     }
 
-    public function isUser(string $user = '', string $pass = ''): bool
+    public function getInfoFrom(string $key, string $value): array|false
     {
-        if ('' === $pass) {
-            return false;
-        }
-        $ret = false;
+        $entries = $this->search($this->equals($key, $value), 1);
 
-        try {
-            $linkIdentifier = $this->createConnection();
-            $this->addOptions($linkIdentifier);
-            if ($linkIdentifier) {
-                $this->bindConnection($linkIdentifier);
-                $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
-                if ($searchResult) {
-                    $info = ldap_get_entries($linkIdentifier, $searchResult);
-                    if ($info && (0 != $info['count'])) {
-                        $dn = $info[0]['dn'];
-                        $ret = @ldap_bind($linkIdentifier, $dn, $pass);
-                    }
-                }
-                $this->closeConnection($linkIdentifier);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
-
-            throw $e;
-        }
-
-        return $ret;
+        return $entries[0] ?? false;
     }
 
-    public function getName(string $user): string
-    {
-        $name = false;
-
-        try {
-            $linkIdentifier = $this->createConnection();
-            $this->addOptions($linkIdentifier);
-            if ($linkIdentifier) {
-                $this->bindConnection($linkIdentifier);
-                $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
-                if ($searchResult) {
-                    $info = ldap_get_entries($linkIdentifier, $searchResult);
-                    if ($info && (0 != count($info))) {
-                        $name = $info[0]['cn'][0];
-                    }
-                }
-                $this->closeConnection($linkIdentifier);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
-
-            throw $e;
-        }
-
-        return $name;
-    }
-
-    public function getMail(string $user): string
-    {
-        $name = false;
-
-        try {
-            $linkIdentifier = $this->createConnection();
-            $this->addOptions($linkIdentifier);
-            if ($linkIdentifier) {
-                $this->bindConnection($linkIdentifier);
-                $searchResult = ldap_search($linkIdentifier, $this->baseDn, 'uid='.$user, [], 0, 1);
-                if ($searchResult) {
-                    $info = ldap_get_entries($linkIdentifier, $searchResult);
-                    if ($info && (0 != count($info))) {
-                        $name = $info[0]['mail'][0];
-                    }
-                }
-                $this->closeConnection($linkIdentifier);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
-
-            throw $e;
-        }
-
-        return $name;
-    }
-
-    public function getInfoFromEmail($email)
+    public function getInfoFromEmail(string $email): array|false
     {
         return $this->getInfoFrom('mail', $email);
     }
 
-    public function getInfoFrom(string $key, string $value)
+    public function getName(string $user): ?string
     {
-        $return = false;
+        $info = $this->getInfoFrom('uid', $user);
 
-        $linkIdentifier = $this->createConnection();
-        $this->addOptions($linkIdentifier);
-        if ($linkIdentifier) {
-            $this->bindConnection($linkIdentifier);
-            $searchResult = ldap_search($linkIdentifier, $this->baseDn, $key.'='.$value, [], 0, 1);
-            if ($searchResult) {
-                $info = ldap_get_entries($linkIdentifier, $searchResult);
-                if ($info && (0 != count($info)) && isset($info[0])) {
-                    $return = $info[0];
-                }
-            }
-            $this->closeConnection($linkIdentifier);
-        }
+        return $info['cn'][0] ?? null;
+    }
 
-        return $return;
+    public function getMail(string $user): ?string
+    {
+        $info = $this->getInfoFrom('uid', $user);
+
+        return $info['mail'][0] ?? null;
     }
 
     public function getListUsers(string $cn = '', string $mail = ''): array
     {
-        $limit = 40;
-        $out = [];
+        $filters = [];
+        if ('' !== $cn) {
+            $filters[] = $this->equals('cn', $cn);
+        }
+        if ('' !== $mail) {
+            $filters[] = $this->equals('mail', $mail);
+        }
+
+        return $this->listUsers($filters);
+    }
+
+    public function searchUsers(string $term): array
+    {
+        $term = trim($term);
+        if ('' === $term) {
+            return [];
+        }
+        $escaped = ldap_escape($term, '', LDAP_ESCAPE_FILTER);
+
+        return $this->listUsers(['(cn=*'.$escaped.'*)', '(mail=*'.$escaped.'*)']);
+    }
+
+    private function listUsers(array $filters): array
+    {
+        if (!$filters) {
+            return [];
+        }
+        $filter = 1 === count($filters) ? $filters[0] : '(|'.implode('', $filters).')';
+
+        $users = [];
+        foreach ($this->search($filter, self::LIST_LIMIT, ['cn', 'mail']) as $entry) {
+            if (!isset($entry['mail'][0])) {
+                continue;
+            }
+            $users[] = [
+                'mail' => $entry['mail'][0],
+                'cn' => $entry['cn'][0] ?? $entry['mail'][0],
+            ];
+        }
+
+        return $users;
+    }
+
+    private function equals(string $key, string $value): string
+    {
+        if (!preg_match('/^[A-Za-z][A-Za-z0-9-]*$/', $key)) {
+            throw new \InvalidArgumentException(sprintf('Invalid LDAP attribute "%s"', $key));
+        }
+
+        return '('.$key.'='.ldap_escape($value, '', LDAP_ESCAPE_FILTER).')';
+    }
+
+    private function search(string $filter, int $limit, array $attributes = []): array
+    {
+        $connection = $this->connect();
 
         try {
-            $linkIdentifier = $this->createConnection();
-            $this->addOptions($linkIdentifier);
-            if ($linkIdentifier) {
-                $this->bindConnection($linkIdentifier);
-                $filter = $this->getFilter($cn, $mail);
-                $searchResult = ldap_search($linkIdentifier, $this->baseDn, $filter, [], 0, $limit);
-                if ($searchResult) {
-                    $info = ldap_get_entries($linkIdentifier, $searchResult);
-                    if ($info && (0 != count($info))) {
-                        foreach ($info as $k => $i) {
-                            if ('count' === $k) {
-                                continue;
-                            }
-                            $out[] = [
-                                'mail' => $i['mail'][0],
-                                'cn' => $i['cn'][0],
-                            ];
-                        }
-                    }
-                }
-                $this->closeConnection($linkIdentifier);
-            }
-        } catch (\Exception $e) {
-            $this->logger->error(self::class.' ['.__FUNCTION__.'] '.$e->getMessage());
+            $result = @ldap_search($connection, $this->baseDn, $filter, $attributes, 0, $limit);
+            if (false === $result) {
+                $error = ldap_error($connection);
+                $this->logger->error('LDAP search failed', ['filter' => $filter, 'error' => $error]);
 
-            throw $e;
+                throw new \RuntimeException('LDAP search failed: '.$error);
+            }
+
+            $entries = ldap_get_entries($connection, $result);
+            if (false === $entries) {
+                return [];
+            }
+            unset($entries['count']);
+
+            return array_values($entries);
+        } finally {
+            ldap_unbind($connection);
+        }
+    }
+
+    private function connect(): Connection
+    {
+        if (!$this->isConfigured()) {
+            throw new \RuntimeException('LDAP is not enabled');
         }
 
-        return $out;
-    }
-
-    public function createConnection()
-    {
-        return ldap_connect($this->server);
-    }
-
-    public function bindConnection($linkIdentifier): bool
-    {
-        return @ldap_bind($linkIdentifier, $this->bindRdn, $this->bindPassword);
-    }
-
-    public function addOptions($linkIdentifier)
-    {
-        ldap_set_option($linkIdentifier, LDAP_OPT_PROTOCOL_VERSION, 3);
-    }
-
-    public function addDebugOptions($linkIdentifier)
-    {
-        ldap_set_option($linkIdentifier, LDAP_OPT_DEBUG_LEVEL, 7);
-    }
-
-    public function closeConnection($linkIdentifier)
-    {
-        ldap_close($linkIdentifier);
-    }
-
-    private function getFilter(string $cn = '', string $mail = ''): string
-    {
-        $filter = ($cn ? 'cn='.$cn : '');
-        if ($mail) {
-            if ($filter) {
-                $filter = '(|('.$filter.')(mail='.$mail.'))';
-            } else {
-                $filter = 'mail='.$mail;
-            }
+        $connection = @ldap_connect($this->server);
+        if (false === $connection) {
+            throw new \RuntimeException(sprintf('Invalid LDAP server URI "%s"', $this->server));
         }
 
-        return $filter;
+        ldap_set_option($connection, LDAP_OPT_PROTOCOL_VERSION, $this->version);
+        ldap_set_option($connection, LDAP_OPT_REFERRALS, 0);
+        ldap_set_option($connection, LDAP_OPT_NETWORK_TIMEOUT, self::NETWORK_TIMEOUT);
+
+        if ($this->startTls && !@ldap_start_tls($connection)) {
+            return $this->fail($connection, 'LDAP StartTLS failed');
+        }
+
+        $bound = null === $this->bindRdn ? @ldap_bind($connection) : @ldap_bind($connection, $this->bindRdn, (string) $this->bindPassword);
+        if (!$bound) {
+            return $this->fail($connection, 'LDAP bind failed');
+        }
+
+        return $connection;
+    }
+
+    private function fail(Connection $connection, string $message): never
+    {
+        $error = ldap_error($connection);
+        ldap_unbind($connection);
+        $this->logger->error($message, ['server' => $this->server, 'bind_rdn' => $this->bindRdn, 'error' => $error]);
+
+        throw new \RuntimeException($message.': '.$error);
     }
 }

@@ -25,10 +25,6 @@
         <source>login to search for</source>
         <target state="translated">bilaketak egiteko saioa hasi</target>
       </trans-unit>
-      <trans-unit id="3VrOngG" resname="working">
-        <source>working</source>
-        <target state="translated">lanean</target>
-      </trans-unit>
       <trans-unit id="GXZu1sy" resname="Cancel">
         <source>Cancel</source>
         <target state="translated">Ezeztatu</target>
