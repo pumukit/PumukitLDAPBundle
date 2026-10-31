@@ -1,24 +1,53 @@
 PuMuKIT LDAP Bundle
 ===================
 
-The PumukitLDAPBundle allows connecting to an LDAP Server and to retrieve data from the server for easy metadata filling.
+Bundle based on [Symfony](http://symfony.com/) to work with the [PuMuKIT Video Platform 6.0](https://github.com/pumukit/PuMuKIT/tree/6.0.x) or higher.
 
-How to install bundle
+The PumukitLDAPBundle connects PuMuKIT to an LDAP server to:
+
+- add people to a multimedia object from the LDAP directory ("New from LDAP" in the People tab),
+- look up a user in LDAP after every login, so the client can complete the user with data that the login does
+  not send,
+- give other bundles (e.g. the LmsBundle) an LDAP lookup service,
+- check the connection and the data that the server returns from the console.
+
+Installation
+------------
+
+The PHP `ldap` extension is required.
 
 ```bash
 composer require teltek/pumukit-ldap-bundle
 ```
 
-if not, add this to config/bundles.php
+If Symfony Flex does not do it, add the bundle to `config/bundles.php`:
 
-```
-Pumukit\LDAPBundle\PumukitLDAPBundle::class => ['all' => true]
+```php
+Pumukit\LDAPBundle\PumukitLDAPBundle::class => ['all' => true],
 ```
 
-Then execute the following commands
+and its routes:
+
+```yaml
+pumukit_ldap:
+  resource: "@PumukitLDAPBundle/Resources/config/routing.yml"
+```
+
+Then configure the bundle as explained in the [configuration guide](Resources/doc/ConfigurationGuide.md) and clear
+the cache:
 
 ```bash
 php bin/console cache:clear
-php bin/console cache:clear --env=prod
-php bin/console assets:install
 ```
+
+Upgrading from 2.0.x (PuMuKIT 5)
+--------------------------------
+
+- The `host`, `port` and `useSSL` options were removed (they were not used): put the scheme and the port in
+  `server` (`ldaps://ldap.example.org:636`) and use `start_tls` for StartTLS. `version` is now applied.
+- The LDAP login (`form_login_ldap` with the `AuthenticationHandler` success handler and `LDAPUserService`) was
+  removed. To complete the users with LDAP data after any login, use the `on_login` option and `LdapLoginEvent`.
+- An empty `bind_rdn` binds anonymously, as documented (before, it failed).
+- The values sent to LDAP are escaped and the LDAP errors are logged in `var/log/ldap-YYYY-MM-DD.log`.
+- The "New from LDAP" button no longer connects to LDAP to be shown; a connection error is shown when searching.
+- New `enable` option and new `pumukit:ldap:find:user` command.
