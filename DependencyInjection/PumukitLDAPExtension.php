@@ -43,12 +43,12 @@ class PumukitLDAPExtension extends Extension implements PrependExtensionInterfac
         $config = $this->processConfiguration($configuration, $configs);
 
         $container->setParameter('pumukit_ldap.enable', $config['enable']);
-        $container->setParameter('pumukit_ldap.server', $config['server']);
+        $container->setParameter('pumukit_ldap.server', (string) $config['server']);
         $container->setParameter('pumukit_ldap.version', $config['version']);
         $container->setParameter('pumukit_ldap.start_tls', $config['start_tls']);
         $container->setParameter('pumukit_ldap.bind_rdn', $config['bind_rdn']);
         $container->setParameter('pumukit_ldap.bind_password', $config['bind_password']);
-        $container->setParameter('pumukit_ldap.base_dn', $config['base_dn']);
+        $container->setParameter('pumukit_ldap.base_dn', (string) $config['base_dn']);
         $container->setParameter('pumukit_ldap.on_login.enable', $config['on_login']['enable']);
         $container->setParameter('pumukit_ldap.on_login.ldap_attribute', $config['on_login']['ldap_attribute']);
         $container->setParameter('pumukit_ldap.on_login.user_field', $config['on_login']['user_field']);

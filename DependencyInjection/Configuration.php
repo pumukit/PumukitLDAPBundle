@@ -9,20 +9,27 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
+    public const REQUIRED = ['server', 'base_dn'];
+
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('pumukit_ldap');
         $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
+            ->validate()
+            ->ifTrue(static fn (array $config): bool => $config['enable'] && [] !== self::missing($config))
+            ->then(static function (array $config): never {
+                throw new \InvalidArgumentException('pumukit_ldap needs '.implode(', ', self::missing($config)).' when it is enabled');
+            })
+            ->end()
             ->children()
             ->booleanNode('enable')
             ->defaultTrue()
-            ->info('Enable the LDAP lookups, the person search and the login listener')
+            ->info('Enable the LDAP lookups, the person search and the login listener. If false, server and base_dn are not required')
             ->end()
             ->scalarNode('server')
-            ->isRequired()
-            ->cannotBeEmpty()
+            ->defaultNull()
             ->info('LDAP server URI, e.g. ldap://ldap.example.org:389 or ldaps://ldap.example.org:636')
             ->end()
             ->enumNode('version')
@@ -43,8 +50,7 @@ class Configuration implements ConfigurationInterface
             ->info('Password of bind_rdn')
             ->end()
             ->scalarNode('base_dn')
-            ->isRequired()
-            ->cannotBeEmpty()
+            ->defaultNull()
             ->info('Base DN of the users')
             ->end()
             ->arrayNode('on_login')
@@ -70,5 +76,10 @@ class Configuration implements ConfigurationInterface
         ;
 
         return $treeBuilder;
+    }
+
+    private static function missing(array $config): array
+    {
+        return array_values(array_filter(self::REQUIRED, static fn (string $key): bool => '' === trim((string) $config[$key])));
     }
 }

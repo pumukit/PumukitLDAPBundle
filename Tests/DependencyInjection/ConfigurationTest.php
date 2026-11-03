@@ -42,6 +42,22 @@ class ConfigurationTest extends TestCase
         $this->process(['server' => 'ldap://ldap', 'base_dn' => 'dc=example', 'on_login' => ['user_field' => 'fullname']]);
     }
 
+    public function testTheEnabledBundleNeedsTheServer(): void
+    {
+        $this->expectException(InvalidConfigurationException::class);
+        $this->expectExceptionMessage('server, base_dn');
+
+        $this->process(['server' => '']);
+    }
+
+    public function testTheDisabledBundleNeedsNoServer(): void
+    {
+        $config = $this->process(['enable' => false]);
+
+        $this->assertFalse($config['enable']);
+        $this->assertNull($config['server']);
+    }
+
     private function process(array $config): array
     {
         return (new Processor())->processConfiguration(new Configuration(), [$config]);

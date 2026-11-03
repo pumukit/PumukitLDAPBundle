@@ -18,12 +18,12 @@ pumukit_ldap:
 
 | Option                    | Default    | Description                                                                                   |
 |---------------------------|------------|-----------------------------------------------------------------------------------------------|
-| `enable`                  | `true`     | If false, nothing connects to LDAP: the button is hidden, the routes give 404, the login lookup is skipped and `isConfigured()` is false for the other bundles |
-| `server`                  | (required) | LDAP URI with scheme and port: `ldap://host:389` or `ldaps://host:636`                        |
+| `enable`                  | `true`     | If false, nothing connects to LDAP: the button is hidden, the routes give 404, the login lookup is skipped, `isConfigured()` is false for the other bundles and `server` and `base_dn` are not required |
+| `server`                  | (required if enabled) | LDAP URI with scheme and port: `ldap://host:389` or `ldaps://host:636`                        |
 | `version`                 | `3`        | LDAP protocol version                                                                         |
 | `start_tls`               | `false`    | Upgrade a `ldap://` connection with StartTLS                                                  |
 | `bind_rdn`, `bind_password` | `null`   | Account used to search. If `bind_rdn` is null, the bind is anonymous                          |
-| `base_dn`                 | (required) | Base DN of the users                                                                          |
+| `base_dn`                 | (required if enabled) | Base DN of the users                                                                          |
 | `on_login.enable`         | `false`    | Look up the user in LDAP after every interactive login and dispatch `LdapLoginEvent`         |
 | `on_login.ldap_attribute` | `uid`      | LDAP attribute matched against the user                                                       |
 | `on_login.user_field`     | `username` | User field matched: `username` or `email`                                                     |
