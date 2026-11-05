@@ -27,7 +27,7 @@ class PumukitLDAPExtension extends Extension implements PrependExtensionInterfac
                         'type' => 'rotating_file',
                         'path' => '%kernel.logs_dir%/ldap.log',
                         'level' => 'info',
-                        'max_files' => 30,
+                        'max_files' => '%env(int:PUMUKIT_LOG_MAX_FILES)%',
                         'channels' => [self::LOG_CHANNEL],
                         'bubble' => false,
                         'priority' => 100,

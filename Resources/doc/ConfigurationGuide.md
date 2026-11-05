@@ -98,5 +98,5 @@ $value)`, `getInfoFromEmail($email)`, `getListUsers($cn, $mail)`, `searchUsers($
 Logs
 ----
 
-The bundle logs to its own `ldap` channel, in `%kernel.logs_dir%/ldap-YYYY-MM-DD.log` (30 files kept): connection
+The bundle logs to its own `ldap` channel, in `%kernel.logs_dir%/ldap-YYYY-MM-DD.log` (`PUMUKIT_LOG_MAX_FILES` files kept, 15 by default): connection
 and search errors, users not found on login and people created from LDAP.
