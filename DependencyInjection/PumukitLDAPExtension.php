@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Pumukit\LDAPBundle\DependencyInjection;
 
 use Pumukit\CoreBundle\DependencyInjection\FrontendAssets;
-use Pumukit\LDAPBundle\EventListener\DisabledListener;
+use Pumukit\LDAPBundle\Routing\RouteLoader;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -15,6 +15,7 @@ use Symfony\Component\DependencyInjection\Loader;
 class PumukitLDAPExtension extends Extension implements PrependExtensionInterface
 {
     public const LOG_CHANNEL = 'ldap';
+    public const PERSON_PICKER_TEMPLATE = '@PumukitLDAP/Person/_picker_button.html.twig';
 
     public function prepend(ContainerBuilder $container): void
     {
@@ -58,10 +59,18 @@ class PumukitLDAPExtension extends Extension implements PrependExtensionInterfac
         $container->setParameter('pumukit_ldap.on_login.ldap_attribute', $config['on_login']['ldap_attribute']);
         $container->setParameter('pumukit_ldap.on_login.user_field', $config['on_login']['user_field']);
 
-        if (!$config['enable']) {
-            $container->register(DisabledListener::class)->setAutoconfigured(true);
+        $container->register(RouteLoader::class)
+            ->setArguments(['%pumukit_ldap.enable%', '%kernel.environment%'])
+            ->addTag('routing.loader')
+        ;
 
+        if (!$config['enable']) {
             return;
+        }
+
+        if ($config['person_button']) {
+            $templates = $container->hasParameter('pumukit.person_picker_templates') ? $container->getParameter('pumukit.person_picker_templates') : [];
+            $container->setParameter('pumukit.person_picker_templates', array_values(array_unique([...$templates, self::PERSON_PICKER_TEMPLATE])));
         }
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));

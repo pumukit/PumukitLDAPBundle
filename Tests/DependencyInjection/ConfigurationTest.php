@@ -25,6 +25,7 @@ class ConfigurationTest extends TestCase
         $this->assertFalse($config['start_tls']);
         $this->assertNull($config['bind_rdn']);
         $this->assertNull($config['bind_password']);
+        $this->assertFalse($config['person_button']);
         $this->assertSame(['enable' => false, 'ldap_attribute' => 'uid', 'user_field' => 'username'], $config['on_login']);
     }
 

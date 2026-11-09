@@ -1,0 +1,3 @@
+{% if role.cod != personal_scope_role_code %}
+    {{ render(controller('Pumukit\\LDAPBundle\\Controller\\PersonController::buttonAction', {'mmId': mm.id, 'roleId': role.id})) }}
+{% endif %}

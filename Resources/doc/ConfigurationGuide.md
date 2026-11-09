@@ -10,6 +10,7 @@ pumukit_ldap:
   bind_rdn: 'cn=readonly,ou=system,dc=example,dc=org'
   bind_password: '%env(LDAP_BIND_PASSWORD)%'
   base_dn: 'ou=people,dc=example,dc=org'
+  person_button: true
   on_login:
     enable: true
     ldap_attribute: uid
@@ -18,12 +19,13 @@ pumukit_ldap:
 
 | Option                    | Default    | Description                                                                                   |
 |---------------------------|------------|-----------------------------------------------------------------------------------------------|
-| `enable`                  | `true`     | If false, the routes give 404 and nothing else of the bundle is loaded (`LDAPService`, login listener, commands, `ldap` log channel), and `server` and `base_dn` are not required |
+| `enable`                  | `true`     | If false, nothing of the bundle is loaded (routes, `LDAPService`, login listener, commands, "New from LDAP" button, `ldap` log channel), and `server` and `base_dn` are not required |
 | `server`                  | (required if enabled) | LDAP URI with scheme and port: `ldap://host:389` or `ldaps://host:636`                        |
 | `version`                 | `3`        | LDAP protocol version                                                                         |
 | `start_tls`               | `false`    | Upgrade a `ldap://` connection with StartTLS                                                  |
 | `bind_rdn`, `bind_password` | `null`   | Account used to search. If `bind_rdn` is null, the bind is anonymous                          |
 | `base_dn`                 | (required if enabled) | Base DN of the users                                                                          |
+| `person_button`           | `false`    | Show the "New from LDAP" button in the People tab of the multimedia objects                   |
 | `on_login.enable`         | `false`    | Look up the user in LDAP after every interactive login and dispatch `LdapLoginEvent`         |
 | `on_login.ldap_attribute` | `uid`      | LDAP attribute matched against the user                                                       |
 | `on_login.user_field`     | `username` | User field matched: `username` or `email`                                                     |
@@ -33,15 +35,8 @@ The people search uses the `cn` and `mail` attributes.
 "New from LDAP" button
 ----------------------
 
-The button of the People tab of a multimedia object is rendered by the core when the `pumukit_ldap.ldap`
-parameter is true:
-
-```yaml
-parameters:
-  pumukit_ldap.ldap: true
-```
-
-Keep it false while `enable` is false: the button is a controller of the bundle and it gives 404.
+With `person_button: true` the bundle adds its button to the People tab of the multimedia objects through the
+`pumukit.person_picker_templates` parameter of the core. It is not shown for the owner role.
 
 It searches the LDAP people by name or email; the selected person is linked to the multimedia object, and created
 from LDAP if there is no person with that email.

@@ -8,8 +8,8 @@ use PHPUnit\Framework\TestCase;
 use Pumukit\LDAPBundle\Command\FindUserCommand;
 use Pumukit\LDAPBundle\Controller\PersonController;
 use Pumukit\LDAPBundle\DependencyInjection\PumukitLDAPExtension;
-use Pumukit\LDAPBundle\EventListener\DisabledListener;
 use Pumukit\LDAPBundle\EventListener\LoginListener;
+use Pumukit\LDAPBundle\Routing\RouteLoader;
 use Pumukit\LDAPBundle\Services\LDAPService;
 use Symfony\Bundle\MonologBundle\DependencyInjection\MonologExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -23,21 +23,35 @@ class PumukitLDAPExtensionTest extends TestCase
 {
     private const ENABLED = ['server' => 'ldaps://ldap.example.org', 'base_dn' => 'ou=people,dc=example,dc=org'];
 
-    public function testTheDisabledBundleOnlyRegistersTheNotFoundListener(): void
+    public function testTheDisabledBundleOnlyRegistersTheRouteLoader(): void
     {
-        $container = $this->load(['enable' => false]);
+        $container = $this->load(['enable' => false, 'person_button' => true]);
 
-        $this->assertSame([DisabledListener::class], $this->ldapServices($container));
+        $this->assertSame([RouteLoader::class], $this->ldapServices($container));
+        $this->assertFalse($container->hasParameter('pumukit.person_picker_templates'));
     }
 
-    public function testTheEnabledBundleRegistersItsServicesWithoutTheNotFoundListener(): void
+    public function testTheEnabledBundleRegistersItsServices(): void
     {
         $container = $this->load(self::ENABLED);
 
-        foreach ([LDAPService::class, LoginListener::class, FindUserCommand::class, PersonController::class] as $id) {
+        foreach ([RouteLoader::class, LDAPService::class, LoginListener::class, FindUserCommand::class, PersonController::class] as $id) {
             $this->assertTrue($container->hasDefinition($id), $id);
         }
-        $this->assertFalse($container->hasDefinition(DisabledListener::class));
+    }
+
+    public function testThePersonButtonIsNotAddedByDefault(): void
+    {
+        $this->assertFalse($this->load(self::ENABLED)->hasParameter('pumukit.person_picker_templates'));
+    }
+
+    public function testThePersonButtonIsAddedToTheTemplatesOfTheOtherBundles(): void
+    {
+        $container = new ContainerBuilder();
+        $container->setParameter('pumukit.person_picker_templates', ['@Other/button.html.twig']);
+        (new PumukitLDAPExtension())->load([[...self::ENABLED, 'person_button' => true]], $container);
+
+        $this->assertSame(['@Other/button.html.twig', PumukitLDAPExtension::PERSON_PICKER_TEMPLATE], $container->getParameter('pumukit.person_picker_templates'));
     }
 
     public function testTheDisabledBundleDoesNotPrependTheLogChannel(): void
