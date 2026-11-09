@@ -22,14 +22,14 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  */
 class PersonControllerTest extends TestCase
 {
-    public function testTheSearchIsNotAvailableWhenLdapIsDisabled(): void
+    public function testTheSearchIsNotAvailableWithoutServer(): void
     {
         $this->expectException(NotFoundHttpException::class);
 
         $this->controller($this->ldapService(false))->autocompleteAction(new Request(['term' => 'john']));
     }
 
-    public function testTheButtonIsNotShownWhenLdapIsDisabled(): void
+    public function testTheButtonIsNotShownWithoutServer(): void
     {
         $response = $this->controller($this->ldapService(false))->buttonAction(new MultimediaObject(), new Role());
 

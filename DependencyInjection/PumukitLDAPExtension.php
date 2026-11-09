@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Pumukit\LDAPBundle\DependencyInjection;
 
 use Pumukit\CoreBundle\DependencyInjection\FrontendAssets;
+use Pumukit\LDAPBundle\EventListener\DisabledListener;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -18,6 +19,10 @@ class PumukitLDAPExtension extends Extension implements PrependExtensionInterfac
     public function prepend(ContainerBuilder $container): void
     {
         FrontendAssets::register($container, dirname(__DIR__), '@pumukit/ldap');
+
+        if (!$this->processConfiguration(new Configuration(), $container->getExtensionConfig($this->getAlias()))['enable']) {
+            return;
+        }
 
         if ($container->hasExtension('monolog')) {
             $container->prependExtensionConfig('monolog', [
@@ -52,6 +57,12 @@ class PumukitLDAPExtension extends Extension implements PrependExtensionInterfac
         $container->setParameter('pumukit_ldap.on_login.enable', $config['on_login']['enable']);
         $container->setParameter('pumukit_ldap.on_login.ldap_attribute', $config['on_login']['ldap_attribute']);
         $container->setParameter('pumukit_ldap.on_login.user_field', $config['on_login']['user_field']);
+
+        if (!$config['enable']) {
+            $container->register(DisabledListener::class)->setAutoconfigured(true);
+
+            return;
+        }
 
         $loader = new Loader\YamlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('pumukit_ldap.yaml');

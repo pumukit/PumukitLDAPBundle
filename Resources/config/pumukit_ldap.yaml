@@ -10,7 +10,6 @@ services:
       $bindRdn: '%pumukit_ldap.bind_rdn%'
       $bindPassword: '%pumukit_ldap.bind_password%'
       $baseDn: '%pumukit_ldap.base_dn%'
-      $enabled: '%pumukit_ldap.enable%'
       $onLoginEnabled: '%pumukit_ldap.on_login.enable%'
       $onLoginLdapAttribute: '%pumukit_ldap.on_login.ldap_attribute%'
       $onLoginUserField: '%pumukit_ldap.on_login.user_field%'

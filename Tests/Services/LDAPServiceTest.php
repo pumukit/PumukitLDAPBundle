@@ -15,18 +15,18 @@ use Pumukit\LDAPBundle\Services\LDAPService;
  */
 class LDAPServiceTest extends TestCase
 {
-    public function testADisabledServiceIsNotConfiguredAndDoesNotConnect(): void
+    public function testAServiceWithoutServerIsNotConfiguredAndDoesNotConnect(): void
     {
-        $service = $this->service(enabled: false);
+        $service = $this->service('');
 
         $this->assertFalse($service->isConfigured());
         $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessage('LDAP is not enabled');
+        $this->expectExceptionMessage('The LDAP server is not configured');
 
         $service->getInfoFromEmail('jdoe@example.org');
     }
 
-    public function testAnEnabledServiceWithAServerIsConfigured(): void
+    public function testAServiceWithAServerIsConfigured(): void
     {
         $this->assertTrue($this->service()->isConfigured());
     }
@@ -40,14 +40,14 @@ class LDAPServiceTest extends TestCase
 
     public function testAnEmptySearchDoesNotConnect(): void
     {
-        $service = $this->service(enabled: false);
+        $service = $this->service('');
 
         $this->assertSame([], $service->searchUsers('  '));
         $this->assertSame([], $service->getListUsers());
     }
 
-    private function service(bool $enabled = true): LDAPService
+    private function service(string $server = 'ldap://127.0.0.1:1'): LDAPService
     {
-        return new LDAPService('ldap://127.0.0.1:1', 'ou=people,dc=example,dc=org', new NullLogger(), enabled: $enabled);
+        return new LDAPService($server, 'ou=people,dc=example,dc=org', new NullLogger());
     }
 }

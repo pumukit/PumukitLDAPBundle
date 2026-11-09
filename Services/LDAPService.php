@@ -22,12 +22,11 @@ class LDAPService
         private readonly ?string $bindPassword = null,
         private readonly int $version = 3,
         private readonly bool $startTls = false,
-        private readonly bool $enabled = true,
     ) {}
 
     public function isConfigured(): bool
     {
-        return $this->enabled && '' !== $this->server;
+        return '' !== $this->server;
     }
 
     public function checkConnection(): bool
@@ -146,7 +145,7 @@ class LDAPService
     private function connect(): Connection
     {
         if (!$this->isConfigured()) {
-            throw new \RuntimeException('LDAP is not enabled');
+            throw new \RuntimeException('The LDAP server is not configured');
         }
 
         $connection = @ldap_connect($this->server);

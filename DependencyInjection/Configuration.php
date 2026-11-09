@@ -26,7 +26,7 @@ class Configuration implements ConfigurationInterface
             ->children()
             ->booleanNode('enable')
             ->defaultTrue()
-            ->info('Enable the LDAP lookups, the person search and the login listener. If false, server and base_dn are not required')
+            ->info('Enable the LDAP lookups, the person search and the login listener. If false, the routes give 404, nothing else of the bundle is loaded and server and base_dn are not required')
             ->end()
             ->scalarNode('server')
             ->defaultNull()

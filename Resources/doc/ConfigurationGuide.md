@@ -18,7 +18,7 @@ pumukit_ldap:
 
 | Option                    | Default    | Description                                                                                   |
 |---------------------------|------------|-----------------------------------------------------------------------------------------------|
-| `enable`                  | `true`     | If false, nothing connects to LDAP: the button is hidden, the routes give 404, the login lookup is skipped, `isConfigured()` is false for the other bundles and `server` and `base_dn` are not required |
+| `enable`                  | `true`     | If false, the routes give 404 and nothing else of the bundle is loaded (`LDAPService`, login listener, commands, `ldap` log channel), and `server` and `base_dn` are not required |
 | `server`                  | (required if enabled) | LDAP URI with scheme and port: `ldap://host:389` or `ldaps://host:636`                        |
 | `version`                 | `3`        | LDAP protocol version                                                                         |
 | `start_tls`               | `false`    | Upgrade a `ldap://` connection with StartTLS                                                  |
@@ -40,6 +40,8 @@ parameter is true:
 parameters:
   pumukit_ldap.ldap: true
 ```
+
+Keep it false while `enable` is false: the button is a controller of the bundle and it gives 404.
 
 It searches the LDAP people by name or email; the selected person is linked to the multimedia object, and created
 from LDAP if there is no person with that email.
@@ -93,7 +95,8 @@ Other bundles
 
 `Pumukit\LDAPBundle\Services\LDAPService` can be injected to look up users: `isConfigured()`, `getInfoFrom($attribute,
 $value)`, `getInfoFromEmail($email)`, `getListUsers($cn, $mail)`, `searchUsers($term)`, `getName($uid)` and
-`getMail($uid)`. The values are escaped.
+`getMail($uid)`. The values are escaped. With `enable: false` the service does not exist, so inject it as
+`?LDAPService $ldapService = null`.
 
 Logs
 ----

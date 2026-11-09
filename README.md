@@ -50,4 +50,5 @@ Upgrading from 2.0.x (PuMuKIT 5)
 - An empty `bind_rdn` binds anonymously, as documented (before, it failed).
 - The values sent to LDAP are escaped and the LDAP errors are logged in `var/log/ldap-YYYY-MM-DD.log`.
 - The "New from LDAP" button no longer connects to LDAP to be shown; a connection error is shown when searching.
-- New `enable` option and new `pumukit:ldap:find:user` command.
+- New `enable` option: if false, the routes give 404 and nothing else of the bundle is loaded (`LDAPService`, login
+  listener, commands). New `pumukit:ldap:find:user` command.
